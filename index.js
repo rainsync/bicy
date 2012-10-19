@@ -10,7 +10,7 @@ var config = require('./config').config;
 var ports = config.ports;
 var hosts = config.hosts;
 
-//redis initaliz
+//redis initalize
 var redis;
 if(config.redis.enabled)
 {
@@ -18,7 +18,7 @@ if(config.redis.enabled)
 	redis.store = redis.createClient(config.redis.port, config.redis.host);
 }
 
-//hosts initializ
+//hosts initialize
 for(var i in hosts)
 {
 	(function(h){
