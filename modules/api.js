@@ -6,4 +6,3 @@ app.get('/', function(req, res){
 });
 
 exports.app = app;
-exports.filename = __filename;

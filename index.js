@@ -1,44 +1,24 @@
 var express = require('express');
 var fs = require('fs');
+var redis;
 
 var app = express();
 var vhost = express();
-
-var ports = [80, 81, 8080];
-var hosts = [
-	{
-		name: 'example',
-		host: 'example.bicy.com',
-		type: 'express',
-		moduleName: 'example'
-	},
-	{
-		name: 'site',
-		host: 'www.bicy.com',
-		type: 'express',
-		moduleName: 'site'
-	},
-	{
-		name: 'site',
-		host: 'bicy.com',
-		type: 'express',
-		moduleName: 'site'
-	},
-	{
-		name: 'page',
-		host: 'page.bicy.com',
-		type: 'express',
-		moduleName: 'page'
-	},
-	{
-		name: 'api',
-		host: 'api.bicy.com',
-		type: 'express',
-		moduleName: 'api'
-	}
-];
 var modules = [];
+var config = require('./config').config;
 
+var ports = config.ports;
+var hosts = config.hosts;
+
+//redis initaliz
+var redis;
+if(config.redis.enabled)
+{
+	redis = require('redis');
+	redis.store = redis.createClient(config.redis.port, config.redis.host);
+}
+
+//hosts initializ
 for(var i in hosts)
 {
 	(function(h){
@@ -46,18 +26,29 @@ for(var i in hosts)
 
 		if(h.type == 'express')
 		{
+			h.modulePath = __dirname + '/modules/' + h.moduleName;
+			if(h.modulePath.indexOf('.js') == -1) h.modulePath+= '.js';
+
 			if(!modules[h.moduleName])
 				process.nextTick(function(){
-					fs.watchFile(modules[h.moduleName].filename, function(curr, prev){
+					fs.watchFile(h.modulePath, function(curr, prev){
 						console.log('reload module', h.moduleName);
-						if(modules[h.moduleName]) delete require.cache[modules[h.moduleName].filename];
-						modules[h.moduleName] = require('./modules/' + h.moduleName, true);
+						try {
+							modules[h.moduleName] = require(h.modulePath, true);
+						} catch (e) {
+
+						}
 					});
 				});
 
-			modules[h.moduleName] = require('./modules/' + h.moduleName);
+			try {
+				modules[h.moduleName] = require(h.modulePath);
+			} catch (e) {
+
+			}
 
 			app.use(function(req, res, next) {
+				if(!modules[h.moduleName]) return next();
 				h.hostRegExp = new RegExp('^' + h.host.replace(/[*]/g, '(.*?)') + '$', 'i');
 			    if (!req.headers.host) return next();
 			    var host = req.headers.host.split(':')[0];
@@ -68,6 +59,12 @@ for(var i in hosts)
 		}
 	})(hosts[i]);;
 }
+
+process.on('uncaughtException', function (err) {
+	console.log('Caught exception ---');
+	console.log(err);
+	console.log('--------------------');
+});
 
 if(Object.prototype.toString.apply(ports) == '[object Array]')
 	for(var i in ports)
