@@ -1,6 +1,7 @@
 var express = require('express');
-var app = express();
 var config = require('../config').config;
+var redis = require('redis');
+var app = express();
 var code = config.shortUrl.base62code;
 var codeToken = [];
 
@@ -16,8 +17,44 @@ app.get('/ctn/:code', function(req, res){
 	res.send(String(codeToNum(req.params.code)));
 });
 
+app.get('/makeurl', function(req, res){
+	redis.store.incr('short_url_index', function(err, data){
+		var n = Number(data);
+
+		redis.store.set('short_url_data:' + n, JSON.stringify({
+			type: 'location',
+			dest: req.query["url"]
+		}));
+
+		res.send('url : http://page.bicy.com/' + numToCode(n));
+	});
+});
+
 app.get('/:shortUrl', function(req, res){
-	res.send('short url page');
+	if(config.redis.enabled == false)
+	{
+		res.send(503);
+		return;
+	}
+
+	var n = codeToNum(req.params.shortUrl);
+	if(n == 0)
+	{
+		res.send(404);
+		return;
+	}
+
+	//shortUrl Processing
+	redis.store.get('short_url_data:' + n, function(err, data){
+		var parse = JSON.parse(String(data));
+
+		if(parse.type == 'location')
+		{
+			res.statusCode = 302;
+			res.header('Location', parse.dest);
+			res.end();
+		}
+	});
 });
 
 app.get('/:id/:page', function(req, res){
@@ -28,6 +65,7 @@ function numToCode(num)
 {
 	if(num == 0) return '';
 
+	var ck = checkKey(num);
 	var res = '';
 
 	while(num > 0)
@@ -37,7 +75,7 @@ function numToCode(num)
 		num = Math.floor(num / 62);
 	}
 
-	return res;
+	return res + ck;
 }
 
 function codeToNum(cd)
