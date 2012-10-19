@@ -30,15 +30,14 @@ for(var i in hosts)
 			if(h.modulePath.indexOf('.js') == -1) h.modulePath+= '.js';
 
 			if(!modules[h.moduleName])
-				process.nextTick(function(){
-					fs.watchFile(h.modulePath, function(curr, prev){
-						console.log('reload module', h.moduleName);
-						try {
-							modules[h.moduleName] = require(h.modulePath, true);
-						} catch (e) {
+				fs.watchFile(h.modulePath, function(curr, prev){
+					console.log('reload module', h.moduleName);
+					try {
+						delete require.cache[h.modulePath];
+						modules[h.moduleName] = require(h.modulePath, true);
+					} catch (e) {
 
-						}
-					});
+					}
 				});
 
 			try {
