@@ -38,5 +38,10 @@ exports.config = {
 		enabled: false,
 		host: 'localhost',
 		port: 6379
+	},
+
+	shortUrl: {
+		base62code: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+		prime: [7, 21, 47];
 	}
 };
