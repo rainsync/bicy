@@ -1,10 +1,8 @@
 var express = require('express');
 var app = express();
-var codes = 'HfXWlPMmcrsbKakTedBF50p6yQ3RIvgAGDCZ2ULjz7JuEqinoS8O4V9Nw1txhY';
+var config = require('../config').config;
+var code = config.shortUrl.base62code;
 var codeToken = [];
-// 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-// shuffle!
-// HfXWlPMmcrsbKakTedBF50p6yQ3RIvgAGDCZ2ULjz7JuEqinoS8O4V9Nw1txhY
 
 app.get('/', function(req, res){
 	res.send('this page is pagess');
@@ -23,7 +21,7 @@ app.get('/:shortUrl', function(req, res){
 });
 
 app.get('/:id/:page', function(req, res){
-	res.send('member page');
+	res.send('member page', req.params.id, req.params.page);
 });
 
 function numToCode(num)
@@ -42,16 +40,16 @@ function numToCode(num)
 	return res;
 }
 
-function codeToNum(code)
+function codeToNum(cd)
 {
-	if(code.length < 4) return 0;
+	if(cd.length < 4) return 0;
 
-	var ck = code.substring(code.length, code.length - 3);
-	code = code.substr(0, code.length - 3);
+	var ck = cd.substring(cd.length, cd.length - 3);
+	cd = cd.substr(0, cd.length - 3);
 	var num = 0;
 
-	for(var i = 0, j = 1; i < code.length; i++, j*= 62)
-		num+= (codes.indexOf(code.substr(i, 1))) * j;
+	for(var i = 0, j = 1; i < cd.length; i++, j*= 62)
+		num+= (code.indexOf(cd.substr(i, 1))) * j;
 
 	if(ck == checkKey(num))
 		return num;
@@ -61,7 +59,7 @@ function codeToNum(code)
 
 function checkKey(num)
 {
-	var prime = [94993, 1259, 13259];
+	var prime = config.shortUrl.prime;
 	var res = '';
 
 	for(var i = 0; i < 3; i++)
@@ -71,6 +69,6 @@ function checkKey(num)
 }
 
 for(var i = 0; i < 62; i++)
-	codeToken[i] = codes.substr(i, 1);
+	codeToken[i] = code.substr(i, 1);
 
 exports.app = app;
