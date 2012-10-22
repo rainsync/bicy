@@ -48,7 +48,7 @@ for(var i in config.modules)
 		{
 			function vhost(host){
 				var hostRegExp = new RegExp('^' + host.replace(/[*]/g, '(.*?)') + '$', 'i');
-				
+
 				return function(req, res, next){
 				    if (!req.headers.host) return next();
 				    var host = req.headers.host.split(':')[0];
