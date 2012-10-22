@@ -27,7 +27,7 @@ exports.config = {
 			type: 'extension'
 		}
 	],
-	
+
 	redis: {
 		enabled: false,
 		host: 'localhost',
@@ -37,5 +37,10 @@ exports.config = {
 	shortUrl: {
 		base62code: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
 		prime: [7, 21, 47];
+	},
+
+	facebook: {
+		appId: '',
+		appSecret: ''
 	}
 };
