@@ -1,7 +1,10 @@
 var express = require('express');
 var app = express();
 
-app.get('/', function(req, res){
+var modules = global.modules;
+var config = global.config;
+
+app.get('/', function(req, res)
 	res.send('this page is api');
 });
 

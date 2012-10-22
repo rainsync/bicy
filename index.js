@@ -7,7 +7,8 @@ var app = express();
 var vhost = express();
 var modules = {};
 
-require.modules = modules;
+global.modules = modules;
+global.config = config;
 
 //redis initalize
 var redis;

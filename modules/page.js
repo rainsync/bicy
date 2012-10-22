@@ -1,7 +1,10 @@
 var express = require('express');
-var config = require('../config').config;
 var redis = require('redis');
 var app = express();
+
+var modules = global.modules;
+var config = global.config;
+
 var code = config.shortUrl.base62code;
 var codeToken = [];
 
