@@ -1,14 +1,13 @@
 var express = require('express');
 var fs = require('fs');
-var redis;
-
-var app = express();
-var vhost = express();
-var modules = [];
 var config = require('./config').config;
 
-var ports = config.ports;
-var hosts = config.hosts;
+var redis;
+var app = express();
+var vhost = express();
+var modules = {};
+
+require.modules = modules;
 
 //redis initalize
 var redis;
@@ -19,54 +18,76 @@ if(config.redis.enabled)
 }
 
 //hosts initialize
-for(var i in hosts)
+for(var i in config.modules)
 {
-	(function(h){
-		console.log('host load', h.host);
+	modules[config.modules[i].name] = {};
 
-		if(h.type == 'express')
-		{
-			h.modulePath = __dirname + '/modules/' + h.moduleName;
-			if(h.modulePath.indexOf('.js') == -1) h.modulePath+= '.js';
+	(function(info, module){
+		console.log('load module', info.name);
 
-			if(!modules[h.moduleName])
-				fs.watchFile(h.modulePath, function(curr, prev){
-					console.log('reload module', h.moduleName);
-					try {
-						delete require.cache[h.modulePath];
-						modules[h.moduleName] = require(h.modulePath, true);
-					} catch (e) {
+		var path = __dirname + '/modules/' + info.name;
+		if(path.indexOf('.js') == -1) path+= '.js';
 
-					}
-				});
+		try {
+			module = require(path);
+		} catch (e) {
 
+		}
+
+		fs.watchFile(path, function(curr, prev){
+			console.log('reload module', info.name);
 			try {
-				modules[h.moduleName] = require(h.modulePath);
+				delete require.cache[path];
+				module = require(path, true);
 			} catch (e) {
 
 			}
+		});
 
-			app.use(function(req, res, next) {
-				if(!modules[h.moduleName]) return next();
-				h.hostRegExp = new RegExp('^' + h.host.replace(/[*]/g, '(.*?)') + '$', 'i');
-			    if (!req.headers.host) return next();
-			    var host = req.headers.host.split(':')[0];
-			    if (!h.hostRegExp.test(host)) return next();
-			    if ('function' == typeof modules[h.moduleName].app) return modules[h.moduleName].app(req, res, next);
-			    modules[h.moduleName].app.emit('request', req, res);
-			});
+		if(info.type == 'express')
+		{
+			function vhost(host){
+				var hostRegExp = new RegExp('^' + host.replace(/[*]/g, '(.*?)') + '$', 'i');
+				
+				return function(req, res, next){
+				    if (!req.headers.host) return next();
+				    var host = req.headers.host.split(':')[0];
+				    if (!hostRegExp.test(host)) return next();
+				    if ('function' == typeof module.app) return module.app(req, res, next);
+				    module.app.emit('request', req, res);
+				}
+			}
+
+			if(isArray(info.host) == true)
+				for(var i in info.host)
+					app.use(vhost(info.host[i]));
+			else
+				app.use(vhost(info.host));
 		}
-	})(hosts[i]);;
+		else if(info.type == 'extension')
+		{
+
+		}
+	})(config.modules[i], modules[config.modules.name]);;
 }
 
 process.on('uncaughtException', function (err) {
-	console.log('Caught exception ---');
+	console.log('Caught exception -------------------------------');
 	console.log(err);
-	console.log('--------------------');
+	console.log('------------------------------------------------');
 });
 
-if(Object.prototype.toString.apply(ports) == '[object Array]')
-	for(var i in ports)
-		app.listen(ports[i]);
+if(isArray(config.ports) == true)
+	for(var i in config.ports)
+		app.listen(config.ports[i]);
 else
-	app.listen(ports);
+	app.listen(config.ports);
+
+
+function isArray(obj)
+{
+	if(Object.prototype.toString.apply(obj) == '[object Array]')
+		return true;
+	else
+		return false;	
+}

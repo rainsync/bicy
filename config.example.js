@@ -1,39 +1,33 @@
 exports.config = {
 	ports: [80, 81, 8080],
 	
-	hosts: [
+	modules: [
 		{
 			name: 'example',
-			host: 'example.bicy.com',
 			type: 'express',
-			moduleName: 'example'
+			host: 'example.bicy.com'
 		},
 		{
 			name: 'site',
-			host: 'www.bicy.com',
 			type: 'express',
-			moduleName: 'site'
-		},
-		{
-			name: 'site',
-			host: 'bicy.com',
-			type: 'express',
-			moduleName: 'site'
+			host: ['bicy.com', 'www.bicy.com']
 		},
 		{
 			name: 'page',
-			host: 'page.bicy.com',
 			type: 'express',
-			moduleName: 'page'
+			host: 'page.bicy.com'
 		},
 		{
 			name: 'api',
-			host: 'api.bicy.com',
 			type: 'express',
-			moduleName: 'api'
+			host: 'api.bicy.com'
+		},
+		{
+			name: 'facebook',
+			type: 'extension'
 		}
 	],
-
+	
 	redis: {
 		enabled: false,
 		host: 'localhost',
