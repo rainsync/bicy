@@ -33,6 +33,9 @@ for(var i in config.modules)
 			module = require(path);
 		} catch (e) {
 
+		} finally {
+			if(module) console.log('....OK!');
+			else console.log('....ERROR');
 		}
 
 		fs.watchFile(path, function(curr, prev){
@@ -41,7 +44,8 @@ for(var i in config.modules)
 				delete require.cache[path];
 				module = require(path, true);
 			} catch (e) {
-
+				if(module) console.log('....OK!');
+				else console.log('....ERROR');
 			}
 		});
 
@@ -70,6 +74,11 @@ for(var i in config.modules)
 
 		}
 	})(config.modules[i], modules[config.modules.name]);;
+}
+
+for(var i in modules)
+{
+	modules[i].init();
 }
 
 process.on('uncaughtException', function (err) {
