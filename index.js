@@ -23,7 +23,7 @@ for(var i in config.modules)
 {
 	modules[config.modules[i].name] = {};
 
-	(function(info, module){
+	(function(info){
 		console.log('load module', info.name);
 
 		var path = __dirname + '/modules/' + info.name;
@@ -44,7 +44,11 @@ for(var i in config.modules)
 				delete require.cache[path];
 				module = require(path, true);
 			} catch (e) {
-				if(module) console.log('....OK!');
+				if(module)
+				{
+					if(module.ready) module.ready();
+					console.log('....OK!');
+				}
 				else console.log('....ERROR');
 			}
 		});
@@ -73,12 +77,14 @@ for(var i in config.modules)
 		{
 
 		}
-	})(config.modules[i], modules[config.modules.name]);;
+
+		modules[info.name] = module;
+	})(config.modules[i]);
 }
 
 for(var i in modules)
 {
-	modules[i].init();
+	if(modules[i].ready) modules[i].ready();
 }
 
 process.on('uncaughtException', function (err) {
