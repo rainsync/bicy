@@ -6,27 +6,23 @@ var code = config.shortUrl.base62code;
 var codeToken = [];
 
 app.get('/', function(req, res){
-	res.send('this page is pagess');
+	res.send('this page is page');
 });
 
 app.get('/ntc/:num', function(req, res){
-	res.send(numToCode(req.params.num) + checkKey(req.params.num));
+	res.send(indexToCode(req.params.num) + checkKey(req.params.num));
 });
 
 app.get('/ctn/:code', function(req, res){
-	res.send(String(codeToNum(req.params.code)));
+	res.send(String(codeToIndex(req.params.code)));
 });
 
 app.get('/makeurl', function(req, res){
-	redis.store.incr('short_url_index', function(err, data){
-		var n = Number(data);
-
-		redis.store.set('short_url_data:' + n, JSON.stringify({
-			type: 'location',
-			dest: req.query["url"]
-		}));
-
-		res.send('url : http://page.bicy.com/' + numToCode(n));
+	registerShortUrl({
+		type: 'location',
+		dest: req.query["url"]
+	}, function(data){
+		res.send(data.url + '<br>' + data.index + '<br>' + data.code);
 	});
 });
 
@@ -37,15 +33,15 @@ app.get('/:shortUrl', function(req, res){
 		return;
 	}
 
-	var n = codeToNum(req.params.shortUrl);
-	if(n == 0)
+	var index = codeToIndex(req.params.shortUrl);
+	if(index == 0)
 	{
 		res.send(404);
 		return;
 	}
 
 	//shortUrl Processing
-	redis.store.get('short_url_data:' + n, function(err, data){
+	redis.store.get('short_url_data:' + index, function(err, data){
 		var parse = JSON.parse(String(data));
 
 		if(parse.type == 'location')
@@ -61,47 +57,62 @@ app.get('/:id/:page', function(req, res){
 	res.send('member page', req.params.id, req.params.page);
 });
 
-function numToCode(num)
+function registerShortUrl(data, callback)
 {
-	if(num == 0) return '';
+	redis.store.incr('short_url_index', function(err, index){
+		index = Number(index);
 
-	var ck = checkKey(num);
+		redis.store.set('short_url_data:' + index, JSON.stringify(data));
+
+		callback({
+			index: index,
+			code: indexToCode(index),
+			url: 'http://page.bicy.com/' + indexToCode(index)
+		});
+	});
+}
+
+function indexToCode(index)
+{
+	if(index == 0) return '';
+
+	var ck = checkKey(index);
 	var res = '';
 
-	while(num > 0)
+	while(index > 0)
 	{
-		var n = num % 62;
+		var n = index % 62;
 		res+= codeToken[n];;
-		num = Math.floor(num / 62);
+		index = Math.floor(index / 62);
 	}
 
 	return res + ck;
 }
 
-function codeToNum(cd)
+function codeToIndex(cd)
 {
 	if(cd.length < 4) return 0;
 
 	var ck = cd.substring(cd.length, cd.length - 3);
 	cd = cd.substr(0, cd.length - 3);
-	var num = 0;
+	var index = 0;
 
 	for(var i = 0, j = 1; i < cd.length; i++, j*= 62)
-		num+= (code.indexOf(cd.substr(i, 1))) * j;
+		index+= (code.indexOf(cd.substr(i, 1))) * j;
 
-	if(ck == checkKey(num))
-		return num;
+	if(ck == checkKey(index))
+		return index;
 	else
 		return 0;
 }
 
-function checkKey(num)
+function checkKey(index)
 {
 	var prime = config.shortUrl.prime;
 	var res = '';
 
 	for(var i = 0; i < 3; i++)
-		res+= codeToken[prime[i] * num % 62];
+		res+= codeToken[prime[i] * index % 62];
 
 	return res;
 }
