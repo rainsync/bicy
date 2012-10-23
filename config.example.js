@@ -21,10 +21,6 @@ exports.config = {
 			name: 'api',
 			type: 'express',
 			host: 'api.bicy.com'
-		},
-		{
-			name: 'facebook',
-			type: 'extension'
 		}
 	],
 

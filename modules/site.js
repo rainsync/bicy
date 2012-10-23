@@ -9,7 +9,6 @@ exports.app = app;
 exports.ready = function() {
 	var modules = global.modules;
 	var config = global.config;
-	var facebook = modules.facebook;
 
 	app.configure(function() {
 		app.use(express.bodyParser());
@@ -23,7 +22,7 @@ exports.ready = function() {
 	app.use(function(req, res, next) {
 		if(!req.session.state)
 		{
-			facebook.uniqId_MD5(function(uid){
+			uniqId_MD5(function(uid){
 				console.log('set uid', uid);
 				req.session.state = uid;
 
@@ -54,16 +53,13 @@ exports.ready = function() {
 		{
 			request({
 				uri: "https://graph.facebook.com/oauth/access_token?" + querystring.stringify({
-					client_id: facebook.appId,
+					client_id: config.facebook.appId,
 					redirect_uri: 'http://bicy.com/auth/facebook',
-					client_secret: facebook.appSecret,
+					client_secret: config.facebook.appSecret,
 					code: String(req.query["code"])
 				})
 			}, function(err, resp, body) {
-				console.log('response');
 				var parse = querystring.parse(body);
-				console.log('access token', parse.access_token);
-
 				req.session.accessToken = parse.access_token;
 
 				res.statusCode = 302;
@@ -75,7 +71,7 @@ exports.ready = function() {
 		{
 			res.statusCode = 302;
 			res.header('Location', 'https://www.facebook.com/dialog/oauth?' + querystring.stringify({
-				client_id: facebook.appId,
+				client_id: config.facebook.appId,
 				redirect_uri: 'http://bicy.com/auth/facebook',
 				state: req.session.state,
 				scope: 'email,user_birthday,read_stream'
@@ -83,4 +79,27 @@ exports.ready = function() {
 			res.end();
 		}
 	});
+
+	function uniqId(callback) {
+		redis.store.incr('unique_id_' + config.facebook.uniqIdKey, function(err, uid){
+			uid = config.facebook.uniqIdKey + '_' + uid;
+			callback(uid);
+		});
+	}
+
+	var uniqId_SHA1 = function(callback){
+		uniqId(function(uid){
+			var shasum = crypto.createHash('sha1');
+			shasum.update(uid);
+			callback(shasum.digest('hex'));
+		});
+	}
+
+	var uniqId_MD5 = function(callback){
+		uniqId(function(uid){
+			var shasum = crypto.createHash('md5');
+			shasum.update(uid);
+			callback(shasum.digest('hex'));
+		});
+	}
 }
