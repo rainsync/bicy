@@ -1,6 +1,6 @@
 var express = require('express');
 var fs = require('fs');
-var config = require('./config').config;
+var config = require('./config');
 
 var redis;
 var app = express();
@@ -24,6 +24,7 @@ for(var i in config.modules)
 	modules[config.modules[i].name] = {};
 
 	(function(info){
+		var module;
 		console.log('load module', info.name);
 
 		var path = __dirname + '/modules/' + info.name;
