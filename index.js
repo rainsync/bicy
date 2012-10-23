@@ -45,9 +45,11 @@ for(var i in config.modules)
 				delete require.cache[path];
 				module = require(path, true);
 			} catch (e) {
+
+			} finally {
 				if(module)
 				{
-					if(module.ready) module.ready();
+					module.ready();
 					console.log('....OK!');
 				}
 				else console.log('....ERROR');
@@ -85,7 +87,7 @@ for(var i in config.modules)
 
 for(var i in modules)
 {
-	if(modules[i].ready) modules[i].ready();
+	modules[i].ready();
 }
 
 process.on('uncaughtException', function (err) {
