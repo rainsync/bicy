@@ -86,13 +86,11 @@ for(var i in config.modules)
 }
 
 for(var i in modules)
-{
 	modules[i].ready();
-}
 
 process.on('uncaughtException', function (err) {
-	console.log('Caught exception -------------------------------');
-	console.log(err);
+	console.log('uncaught exception -------------------------------');
+	console.log(err.stack);
 	console.log('------------------------------------------------');
 });
 
