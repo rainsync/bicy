@@ -6,6 +6,8 @@ var redis;
 var app = express();
 var vhost = express();
 var modules = {};
+var redisStore;
+var mysqlClient;
 
 global.modules = modules;
 global.config = config;
@@ -15,7 +17,30 @@ var redis;
 if(config.redis.enabled)
 {
 	redis = require('redis');
-	redis.store = redis.createClient(config.redis.port, config.redis.host);
+
+	redisStore = redis.createClient(config.redis.port, config.redis.host);
+	global.redisStore = redisStore;
+}
+
+var mysql;
+if(config.mysql.enabled)
+{
+	mysql = require('mysql');
+
+	mysqlClient = mysql.createClient({
+		host     : config.mysql.host || 'localhost',
+		port     : config.mysql.port || 3306,
+		user     : config.mysql.user,
+		password : config.mysql.password
+	});
+
+	mysqlClient.query('USE ' + config.mysql.database);
+
+	setInterval(function(){
+		mysqlClient.ping();
+	}, 30000);
+
+	global.mysqlClient = mysqlClient;
 }
 
 //hosts initialize
