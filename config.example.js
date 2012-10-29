@@ -1,4 +1,4 @@
-exports.config = {
+module.exports = {
 	ports: [80, 81, 8080],
 	
 	modules: [
@@ -10,7 +10,7 @@ exports.config = {
 		{
 			name: 'site',
 			type: 'express',
-			host: ['bicy.com', 'www.bicy.com']
+			host: 'bicy.com'
 		},
 		{
 			name: 'page',
@@ -25,9 +25,17 @@ exports.config = {
 	],
 
 	redis: {
-		enabled: false,
+		enabled: true,
 		host: 'localhost',
 		port: 6379
+	},
+
+	mysql: {
+		enabled: true,
+		host: 'localhost',
+		user: 'bicy',
+		password: '',
+		database: 'bicy'
 	},
 
 	shortUrl: {
