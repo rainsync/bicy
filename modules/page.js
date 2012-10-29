@@ -1,5 +1,4 @@
 var express = require('express');
-var redis = require('redis');
 var app = express();
 
 exports.app = app;
@@ -46,7 +45,7 @@ exports.ready = function() {
 		}
 
 		//shortUrl Processing
-		redis.store.get('short_url_data:' + index, function(err, data){
+		global.redisStore.get('short_url_data:' + index, function(err, data){
 			var parse = JSON.parse(String(data));
 
 			if(parse.type == 'location')
@@ -64,10 +63,10 @@ exports.ready = function() {
 
 	function registerShortUrl(data, callback)
 	{
-		redis.store.incr('short_url_index', function(err, index){
+		global.redisStore.incr('short_url_index', function(err, index){
 			index = Number(index);
 
-			redis.store.set('short_url_data:' + index, JSON.stringify(data));
+			global.redisStore.set('short_url_data:' + index, JSON.stringify(data));
 
 			callback({
 				index: index,

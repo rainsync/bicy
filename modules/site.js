@@ -81,7 +81,7 @@ exports.ready = function() {
 	});
 
 	function uniqId(callback) {
-		redis.store.incr('unique_id_' + config.facebook.uniqIdKey, function(err, uid){
+		global.redisStore.incr('unique_id_' + config.facebook.uniqIdKey, function(err, uid){
 			uid = config.facebook.uniqIdKey + '_' + uid;
 			callback(uid);
 		});
