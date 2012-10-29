@@ -1,8 +1,24 @@
 var express = require('express');
 var querystring = require('querystring');
 var app = express();
+var api = {
+	test : function(arg, callback) {
+		var res = {state: 0};
+		for(var i in arg)
+			res[i] = arg[i];
+		setTimeout(function(){callback(res)}, 1000);
+	},
+
+	register: function(arg, callback) {
+		//arg.name = kadi
+		callback({
+			yourname : arg.name
+		})
+	}
+};
 
 exports.app = app;
+exports.api = api;
 exports.ready = function() {
 	var modules = global.modules;
 	var config = global.config;
@@ -14,7 +30,7 @@ exports.ready = function() {
 	});
 
 	app.post('/', function(req, res) {
-		var parse = JSON.parse(req.body.JSON);
+		var parse = JSON.parse(req.body.DATA);
 
 		if(isArray(parse))
 		{
@@ -23,9 +39,9 @@ exports.ready = function() {
 
 			for(var i in parse)
 				(function(i){
-					if("type" in parse[i] && "function" == typeof funcs[parse[i].type])
+					if("type" in parse[i] && "function" == typeof api[parse[i].type])
 					{
-						funcs[parse[i].type](parse[i], function(result) {
+						api[parse[i].type](parse[i], function(result) {
 							results[i] = result;
 							resCount++;
 
@@ -47,8 +63,8 @@ exports.ready = function() {
 		{
 			var result;
 
-			if("type" in parse && "function" == typeof funcs[parse.type])
-				funcs[parse.type](parse, function(result) {
+			if("type" in parse && "function" == typeof api[parse.type])
+				api[parse.type](parse, function(result) {
 					res.send(result);
 				});
 			else
@@ -60,8 +76,8 @@ exports.ready = function() {
 		var type = req.params.type;
 		var result;
 
-		if("function" == typeof funcs[type])
-			funcs[type]({}, function(result) {
+		if("function" == typeof api[type])
+			api[type]({}, function(result) {
 				res.send(result);
 			});
 		else
@@ -73,26 +89,13 @@ exports.ready = function() {
 		var arg = querystring.parse(req.params.arg);
 		var result;
 
-		if("function" == typeof funcs[type])
-			funcs[type](arg, function(result) {
+		if("function" == typeof api[type])
+			api[type](arg, function(result) {
 				res.send(result);
 			});
 		else
 			res.send({state: 1, msg: 'INVALID TYPE'});
 	});
-
-	var funcs = {
-		test : function(arg, callback) {
-			var res = {state: 0};
-			for(var i in arg)
-				res[i] = arg[i];
-			setTimeout(function(){callback(res)}, 1000);
-		},
-
-		register: function(arg) {
-			callback(arg);
-		}
-	};
 
 	/*
 	{
@@ -101,7 +104,7 @@ exports.ready = function() {
 		if(0)
 		request.post('http://api.bicy.com/', {
 			form: {
-				JSON: JSON.stringify({type: 'test', name: 'nyj'})
+				DATA: JSON.stringify({type: 'test', name: 'nyj'})
 			}
 		}, function(err, res, body) {
 			console.log(body);
@@ -110,7 +113,7 @@ exports.ready = function() {
 		//if(0)
 		request.post('http://api.bicy.com/', {
 			form: {
-				JSON: JSON.stringify([{type: 'test', no: 1}, {type: 'test', no: 2}, {type: 'test', no: 3}])
+				DATA: JSON.stringify([{type: 'test', no: 1}, {type: 'test', no: 2}, {type: 'test', no: 3}])
 			}
 		}, function(err, res, body) {
 			console.log(body);
@@ -123,7 +126,7 @@ function isArray(obj)
 	if(Object.prototype.toString.apply(obj) == '[object Array]')
 		return true;
 	else
-		return false;	
+		return false;
 }
 
 /*
