@@ -1,27 +1,161 @@
 var express = require('express');
 var querystring = require('querystring');
+var async = require('async');
+var fb = require('fb');
+var crypto = require('crypto');
+
+var modules;
+var config;
+var mysqlClient;
+
 var app = express();
+/*
+
+API Reference
+
+[ACCOUNT]
+  @ account-register
+    - (String) nick        : nick name
+    - (String) accesstoken : facebook access token
+    - (String) photo       : base64 encoded jpeg file
+
+    # Return
+      - (Number) state    : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
+      - (Number) uniqid   : unique id
+      - (String) passkey  : pass key
+  ----------------------------------------------------------------------------------------------------------------
+  @ account-login
+    1. default login
+      - (Number) uniqid  : unique id
+      - (String) passkey : pass key
+    2. facebook login
+      - (String) accesstoken : facebook access token
+
+    # Return
+      - (Number) state  : 0(OK) 1(FAILED) 2(INVALID_UNIQID) 3(INVALID_PASSKEY) 4(FACEBOOK_ERROR)
+      * if state == 0
+        - (String) sessid : session id
+  ----------------------------------------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------------------------------------------
+
+*/
 var api = {
-	test : function(arg, callback) {
+	'test' : function(arg, cb) {
 		var res = {state: 0};
 		for(var i in arg)
 			res[i] = arg[i];
-		setTimeout(function(){callback(res)}, 1000);
+		setTimeout(function(){cb(res)}, 1000);
 	},
 
-	register: function(arg, callback) {
-		//arg.name = kadi
-		callback({
-			yourname : arg.name
-		})
+	'account-register': function(arg, cb) {
+		async.waterfall([
+			function(cb) {
+				/* check arguments */
+
+				cb(null);
+			},
+
+			function(cb) {
+				/* register account */
+
+				account.register(null, function(uniqid, passkey) {
+					cb(null, uniqid, passkey);
+				});
+			},
+
+			function(uniqid, passkey, cb) {
+				/* link facebook */
+
+				if(!arg.facebook)
+					cb(null, uniqid, passkey);
+
+				cb(null);
+			}
+		],
+
+		function(err, uniqid, passkey) {
+			if(err || !uniqid || !passkey)
+			{
+				cb({
+					state: 1
+				})
+			}
+			else
+			{
+				cb({
+					state: 0,
+					uniqid: uniqid,
+					passkey: passkey
+				});
+			}
+		});
+	},
+
+	'account-login': function(arg, cb) {
+
+	}
+};
+
+/*
+
+Account Object Reference
+
+1. account.register(argument, callback);
+   argument (JSON)     : 
+   callback (FUNCTION) : function(uniqId, passKey)
+
+2. account.login(argument, callback);
+   argument (JSON)     : 
+   callback (FUNCTION) : 
+
+*/
+var account = {
+	register: function(arg, cb) {
+		async.waterfall([
+			function(cb) {
+				var md5 = crypto.createHash('md5');
+				md5.update((new Date).getTime().toString());
+				md5.update(Math.random().toString());
+				md5.update(Math.random().toString());
+				md5.update(Math.random().toString());
+
+				var passkey = md5.digest('hex');
+
+				mysqlClient.query(
+					"INSERT INTO `account` SET passkey = ?, facebook = ?, accesstoken = ?",
+					[passkey, 0, ''],
+					function(err, results, fields) {
+						cb(null, passkey);
+					}
+				);
+			},
+
+			function(passkey, cb) {
+				mysqlClient.query("SELECT LAST_INSERT_ID() AS `uniqid`", function(err, results, fields) {
+					cb(null, results[0].uniqid, passkey);
+				});
+			}
+		],
+
+		function(err, uniqid, passkey) {
+			cb(uniqid, passkey);
+		});
+	},
+
+	login: function(arg, cb) {
+
 	}
 };
 
 exports.app = app;
 exports.api = api;
 exports.ready = function() {
-	var modules = global.modules;
-	var config = global.config;
+	modules = global.modules;
+	config = global.config;
+	mysqlClient = global.mysqlClient;
 
 	app.use(express.bodyParser());
 
@@ -142,7 +276,7 @@ POST
 	photo: 123123123
 }
 
-1. 
+3. 
 URL : http://api.bicy.com
 POST
 [{
