@@ -42,6 +42,10 @@ API Reference
   ----------------------------------------------------------------------------------------------------------------
 
 */
+var stateCode = {
+	OK: 0
+}
+
 var api = {
 	'test' : function(arg, cb) {
 		var res = {state: 0};
@@ -71,8 +75,16 @@ var api = {
 
 				if(!arg.facebook)
 					cb(null, uniqid, passkey);
-
-				cb(null);
+				else
+					account.facebook.link({
+						uniqid: uniqid,
+						accesstoken: arg.accesstoken
+					}, function(err) {
+						if(err)
+							cb(1);
+						else
+							cb(null, uniqid, passkey);
+					});
 			}
 		],
 
@@ -94,8 +106,24 @@ var api = {
 		});
 	},
 
-	'account-login': function(arg, cb) {
+	'account-linked-facebook': function(arg, cb) {
 
+	},
+
+	'account-login': function(arg, cb) {
+		async.waterfall([
+			function(cb) {
+
+				if(arg.accesstoken)
+				{ /* facebook login */
+
+				}
+			}
+		],
+
+		function(err) {
+
+		});
 	}
 };
 
@@ -103,13 +131,18 @@ var api = {
 
 Account Object Reference
 
-1. account.register(argument, callback);
-   argument (JSON)     : 
-   callback (FUNCTION) : function(uniqId, passKey)
+account.register(argument, callback);
+  argument (JSON)     : 
+  callback (FUNCTION) : function(uniqId, passKey)
 
-2. account.login(argument, callback);
-   argument (JSON)     : 
-   callback (FUNCTION) : 
+account.login(argument, callback);
+  argument (JSON)     : 
+  callback (FUNCTION) : 
+
+facebook
+  account.facebook.link(argument, callback)
+    argument (JSON)     : 
+    callback (FUNCTION) : 
 
 */
 var account = {
@@ -125,8 +158,8 @@ var account = {
 				var passkey = md5.digest('hex');
 
 				mysqlClient.query(
-					"INSERT INTO `account` SET passkey = ?, facebook = ?, accesstoken = ?",
-					[passkey, 0, ''],
+					"INSERT INTO `account` SET passkey = ?",
+					[passkey],
 					function(err, results, fields) {
 						cb(null, passkey);
 					}
@@ -144,6 +177,80 @@ var account = {
 			cb(uniqid, passkey);
 		});
 	},
+
+	facebook: {
+		/*
+		  [account.facebook.link]
+		   arg.uniqid
+		   arg.accesstoken
+		*/
+		link: function(arg, cb) {
+			async.waterfall([
+				function(cb) {
+					/* check account */
+
+					mysqlClient.query(
+						"SELECT `facebook` FROM `account` WHERE `uniqid` = ?",
+						[arg.uniqid],
+						function(err, results, fields) {
+							if(results.length != 1)
+								cb(1);
+							else if(results[0].facebook == 1)
+								cb(2);
+							else
+								cb(null);
+						}
+					);
+				},
+
+				function(cb) {
+					/* get facebook data */
+
+					fb.api('me', {access_token: arg.accesstoken, fields: ['id', 'name', 'email', 'photo', 'updated_time']}, function(res) {
+						console.log(res);
+						cb(null, res);
+
+						account.facebook.friend(arg);
+					});
+
+				},
+
+				function(data, cb) {
+					mysqlClient.query(
+						"UPDATE `account` " +
+						"SET `fbid` = ?, `accesstoken` = ?, `nick` = ?, `email` = ?" +
+						"WHERE `uniqid` = ?",
+						[data.id, arg.accesstoken, data.name, data.email, arg.uniqid]
+					);
+
+					cb(null);
+				}
+			],
+
+			function(err) {
+				cb(null);
+			});
+		},
+
+		/*
+		  [account.facebook.friend]
+		   arg.uniqid
+		   arg.accesstoken
+		*/
+		friend: function(arg, cb) {
+
+			var result = [];
+
+			fb.api('me/friends', {access_token: arg.accesstoken}, function(res) {
+				for(var i in res.data)
+				{
+					console.log(res.data[i]);
+				}
+			});
+
+		}
+	},
+
 
 	login: function(arg, cb) {
 
@@ -164,7 +271,7 @@ exports.ready = function() {
 	});
 
 	app.post('/', function(req, res) {
-		var parse = JSON.parse(req.body.DATA);
+		var parse = req.body;
 
 		if(isArray(parse))
 		{
@@ -199,10 +306,10 @@ exports.ready = function() {
 
 			if("type" in parse && "function" == typeof api[parse.type])
 				api[parse.type](parse, function(result) {
-					res.send(result);
+					res.send([result]);
 				});
 			else
-				res.send({state: 1, msg: 'INVALID TYPE'});
+				res.send([{state: 1, msg: 'INVALID TYPE'}]);
 		}
 	});
 
@@ -215,7 +322,7 @@ exports.ready = function() {
 				res.send(result);
 			});
 		else
-			res.send({state: 1, msg: 'INVALID TYPE'});
+			res.send([{state: 1, msg: 'INVALID TYPE'}]);
 	});
 
 	app.get('/:type/:arg', function(req, res) {
@@ -228,31 +335,8 @@ exports.ready = function() {
 				res.send(result);
 			});
 		else
-			res.send({state: 1, msg: 'INVALID TYPE'});
+			res.send([{state: 1, msg: 'INVALID TYPE'}]);
 	});
-
-	/*
-	{
-		var request = require('request');
-
-		if(0)
-		request.post('http://api.bicy.com/', {
-			form: {
-				DATA: JSON.stringify({type: 'test', name: 'nyj'})
-			}
-		}, function(err, res, body) {
-			console.log(body);
-		});
-
-		//if(0)
-		request.post('http://api.bicy.com/', {
-			form: {
-				DATA: JSON.stringify([{type: 'test', no: 1}, {type: 'test', no: 2}, {type: 'test', no: 3}])
-			}
-		}, function(err, res, body) {
-			console.log(body);
-		});
-	}//*/
 }
 
 function isArray(obj)
@@ -271,10 +355,10 @@ URL : http://api.bicy.com/profile-change/?photo=123123123
 2.
 URL : http://api.bicy.com
 POST
-{
+DATA=JSON.stringify({
 	type: profile-change,
 	photo: 123123123
-}
+})
 
 3. 
 URL : http://api.bicy.com
