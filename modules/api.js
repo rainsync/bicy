@@ -77,7 +77,7 @@ var api = {
 			function(uniqid, passkey, cb) {
 				/* link facebook */
 
-				if(!arg.facebook)
+				if(!arg.accesstoken)
 					cb(null, uniqid, passkey);
 				else
 					account.facebook.link({
@@ -107,7 +107,7 @@ var api = {
 					uniqid: uniqid,
 					passkey: passkey
 				});
-			}
+			} 
 		});
 	},
 
@@ -115,20 +115,26 @@ var api = {
 
 	},
 
-	'account-login': function(arg, cb) {
-		async.waterfall([
-			function(cb) {
+	'account-auth': function(arg, cb) {
+		var _cb = 
+		function(sess) {
+			console.log(sess);
+			if(sess)
+				cb({
+					state: 0,
+					sessid: sess.id
+				})
+			else
+				cb({
+					state: 1,
+					msg: 'LOGIN FAILED'
+				})
+		}
 
-				if(arg.accesstoken)
-				{ /* facebook login */
-
-				}
-			}
-		],
-
-		function(err) {
-
-		});
+		if(arg.uid)
+			account.session.auth(arg.uid, arg.psk, _cb);
+		else if(arg.accesstoken)
+			account.session.facebook(arg.accesstoken, _cb);
 	}
 };
 
@@ -140,7 +146,7 @@ account.register(argument, callback);
   argument (JSON)     : 
   callback (FUNCTION) : function(uniqId, passKey)
 
-account.login(argument, callback);
+account.auth(argument, callback);
   argument (JSON)     : 
   callback (FUNCTION) : 
 
@@ -183,6 +189,45 @@ var account = {
 		});
 	},
 
+	session: {
+		auth: function(uniqid, passkey, cb) {
+			mysqlClient.query(
+				"SELECT `uniqid` FROM `account` WHERE `uniqid` = ? AND `passkey` = ?",
+				[uniqid, passkey],
+				function(err, results, fields) {
+					if(results.length > 0)
+						account.session.makeSession(uniqid, cb);
+					else
+						cb(null);
+				}
+			);
+		},
+
+		facebook: function(accesstoken, cb) {
+			fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
+				if(res.id)
+				{
+					mysqlClient.query(
+						"SELECT `uniqid` FROM `account` WHERE `fbid` = ?",
+						[res.id],
+						function(err, results, fields) {
+							if(results.length > 0)
+								account.session.makeSession(results[0].uniqid, cb);
+							else
+								cb(null);
+						}
+					);
+				}
+			});
+		},
+
+		makeSession: function(uniqid, cb) {
+			cb({
+				id: uniqid
+			})
+		}
+	},
+
 	facebook: {
 		/*
 		  [account.facebook.link]
@@ -212,7 +257,6 @@ var account = {
 					/* get facebook data */
 
 					fb.api('me', {access_token: arg.accesstoken, fields: ['id', 'name', 'email', 'photo', 'updated_time']}, function(res) {
-						console.log(res);
 						cb(null, res);
 
 						account.facebook.friend(arg);
@@ -259,11 +303,6 @@ var account = {
 				);
 			});
 		}
-	},
-
-
-	login: function(arg, cb) {
-
 	}
 };
 
