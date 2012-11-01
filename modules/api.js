@@ -164,7 +164,15 @@ exports.ready = function() {
 	});
 
 	app.post('/', function(req, res) {
-		var parse = JSON.parse(req.body.DATA);
+		//console.log(req.body);
+		//console.log("@@@");
+		//for(var x in req.body){
+		//console.log(x);
+		//console.log("%%%%%");
+		//}
+		//var parse = JSON.parse(req.body);
+		//console.log(req.body.DATA);
+		var parse = req.body;
 
 		if(isArray(parse))
 		{
