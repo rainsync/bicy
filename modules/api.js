@@ -21,12 +21,12 @@ API Reference
 
     # Return
       - (Number) state    : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
-      - (Number) uniqid   : unique id
+      - (Number) uid   : unique id
       - (String) passkey  : pass key
   ----------------------------------------------------------------------------------------------------------------
   @ account-login
     1. default login
-      - (Number) uniqid  : unique id
+      - (Number) uid  : unique id
       - (String) passkey : pass key
     2. facebook login
       - (String) accesstoken : facebook access token
@@ -69,31 +69,31 @@ var api = {
 			function(cb) {
 				/* register account */
 
-				account.register(null, function(uniqid, passkey) {
-					cb(null, uniqid, passkey);
+				account.register(null, function(uid, passkey) {
+					cb(null, uid, passkey);
 				});
 			},
 
-			function(uniqid, passkey, cb) {
+			function(uid, passkey, cb) {
 				/* link facebook */
 
 				if(!arg.accesstoken)
-					cb(null, uniqid, passkey);
+					cb(null, uid, passkey);
 				else
 					account.facebook.link({
-						uniqid: uniqid,
+						uid: uid,
 						accesstoken: arg.accesstoken
 					}, function(err) {
 						if(err)
 							cb(err);
 						else
-							cb(null, uniqid, passkey);
+							cb(null, uid, passkey);
 					});
 			}
 		],
 
-		function(err, uniqid, passkey) {
-			if(err || !uniqid || !passkey)
+		function(err, uid, passkey) {
+			if(err || !uid || !passkey)
 			{
 				cb({
 					state: 1,
@@ -104,7 +104,7 @@ var api = {
 			{
 				cb({
 					state: 0,
-					uniqid: uniqid,
+					uid: uid,
 					passkey: passkey
 				});
 			} 
@@ -176,14 +176,14 @@ var account = {
 			},
 
 			function(passkey, cb) {
-				mysqlClient.query("SELECT LAST_INSERT_ID() AS `uniqid`", function(err, results, fields) {
-					cb(null, results[0].uniqid, passkey);
+				mysqlClient.query("SELECT LAST_INSERT_ID() AS `uid`", function(err, results, fields) {
+					cb(null, results[0].uid, passkey);
 				});
 			}
 		],
 
-		function(err, uniqid, passkey) {
-			cb(uniqid, passkey);
+		function(err, uid, passkey) {
+			cb(uid, passkey);
 		});
 	},
 
@@ -192,11 +192,11 @@ var account = {
 			global.redisStore.get('session:' + sid, function(err, data) {
 				var parse = JSON.parse(data);
 
-				cb(parse.uniqid);
+				cb(parse.uid);
 			});
 		},
 
-		make: function(uniqid, cb) {
+		make: function(uid, cb) {
 			function makeSessionId()
 			{
 				var md5 = crypto.createHash('md5');
@@ -213,7 +213,7 @@ var account = {
 						cb(sid);
 
 						global.redisStore.set('session:' + sid, JSON.stringify({
-							uniqid: uniqid
+							uid: uid
 						}));
 					}
 					else
@@ -224,13 +224,13 @@ var account = {
 			makeSessionId();
 		},
 
-		auth: function(uniqid, passkey, cb) {
+		auth: function(uid, passkey, cb) {
 			mysqlClient.query(
-				"SELECT `uniqid` FROM `account` WHERE `uniqid` = ? AND `passkey` = ?",
-				[uniqid, passkey],
+				"SELECT `uid` FROM `account` WHERE `uid` = ? AND `passkey` = ?",
+				[uid, passkey],
 				function(err, results, fields) {
 					if(results.length > 0)
-						account.session.make(uniqid, cb);
+						account.session.make(uid, cb);
 					else
 						cb(null);
 				}
@@ -242,11 +242,11 @@ var account = {
 				if(res.id)
 				{
 					mysqlClient.query(
-						"SELECT `uniqid` FROM `account` WHERE `fbid` = ?",
+						"SELECT `uid` FROM `account` WHERE `fbid` = ?",
 						[res.id],
 						function(err, results, fields) {
 							if(results.length > 0)
-								account.session.make(results[0].uniqid, cb);
+								account.session.make(results[0].uid, cb);
 							else
 								cb(null);
 						}
@@ -259,7 +259,7 @@ var account = {
 	facebook: {
 		/*
 		  [account.facebook.link]
-		   arg.uniqid
+		   arg.uid
 		   arg.accesstoken
 		*/
 		link: function(arg, cb) {
@@ -268,8 +268,8 @@ var account = {
 					/* check account */
 
 					mysqlClient.query(
-						"SELECT `facebook` FROM `account` WHERE `uniqid` = ?",
-						[arg.uniqid],
+						"SELECT `facebook` FROM `account` WHERE `uid` = ?",
+						[arg.uid],
 						function(err, results, fields) {
 							if(results.length != 1)
 								cb(1);
@@ -296,8 +296,8 @@ var account = {
 					mysqlClient.query(
 						"UPDATE `account` " +
 						"SET `fbid` = ?, `accesstoken` = ?, `nick` = ?, `email` = ?" +
-						"WHERE `uniqid` = ?",
-						[data.id, arg.accesstoken, data.name, data.email, arg.uniqid]
+						"WHERE `uid` = ?",
+						[data.id, arg.accesstoken, data.name, data.email, arg.uid]
 					);
 
 					cb(null);
@@ -311,23 +311,23 @@ var account = {
 
 		/*
 		  [account.facebook.friend]
-		   arg.uniqid
+		   arg.uid
 		   arg.accesstoken
 		*/
 		friend: function(arg, cb) {
 			fb.api('me/friends', {access_token: arg.accesstoken}, function(res) {
 				mysqlClient.query(
-					"DELETE FROM `fb_friends` WHERE `uniqid` = ?",
-					[arg.uniqid]
+					"DELETE FROM `fb_friends` WHERE `uid` = ?",
+					[arg.uid]
 				);
 
 				var values = '';
 				for(var i in res.data)
-					values+= ",('" + arg.uniqid + "','" + res.data[i].id + "')";
+					values+= ",('" + arg.uid + "','" + res.data[i].id + "')";
 				values = values.substr(1);
 
 				mysqlClient.query(
-					"INSERT INTO `fb_friends` (`uniqid`, `fbid`) VALUES " + values
+					"INSERT INTO `fb_friends` (`uid`, `fbid`) VALUES " + values
 				);
 			});
 		}
