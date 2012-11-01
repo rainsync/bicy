@@ -116,13 +116,11 @@ var api = {
 	},
 
 	'account-auth': function(arg, cb) {
-		var _cb = 
-		function(sess) {
-			console.log(sess);
-			if(sess)
+		function _cb(sid) {
+			if(sid)
 				cb({
 					state: 0,
-					sessid: sess.id
+					sessid: sid
 				})
 			else
 				cb({
@@ -190,13 +188,49 @@ var account = {
 	},
 
 	session: {
+		get: function(sid, cb) {
+			global.redisStore.get('session:' + sid, function(err, data) {
+				var parse = JSON.parse(data);
+
+				cb(parse.uniqid);
+			});
+		},
+
+		make: function(uniqid, cb) {
+			function makeSessionId()
+			{
+				var md5 = crypto.createHash('md5');
+				md5.update((new Date).getTime().toString());
+				md5.update(Math.random().toString());
+				md5.update(Math.random().toString());
+				md5.update(Math.random().toString());
+
+				var sid = md5.digest('hex');
+
+				global.redisStore.get('session:' + sid, function(err, data) {
+					if(data == null)
+					{
+						cb(sid);
+
+						global.redisStore.set('session:' + sid, JSON.stringify({
+							uniqid: uniqid
+						}));
+					}
+					else
+						makeSessionId();
+				});
+			}
+
+			makeSessionId();
+		},
+
 		auth: function(uniqid, passkey, cb) {
 			mysqlClient.query(
 				"SELECT `uniqid` FROM `account` WHERE `uniqid` = ? AND `passkey` = ?",
 				[uniqid, passkey],
 				function(err, results, fields) {
 					if(results.length > 0)
-						account.session.makeSession(uniqid, cb);
+						account.session.make(uniqid, cb);
 					else
 						cb(null);
 				}
@@ -212,19 +246,13 @@ var account = {
 						[res.id],
 						function(err, results, fields) {
 							if(results.length > 0)
-								account.session.makeSession(results[0].uniqid, cb);
+								account.session.make(results[0].uniqid, cb);
 							else
 								cb(null);
 						}
 					);
 				}
 			});
-		},
-
-		makeSession: function(uniqid, cb) {
-			cb({
-				id: uniqid
-			})
 		}
 	},
 
