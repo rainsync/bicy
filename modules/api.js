@@ -54,6 +54,10 @@ var api = {
 		setTimeout(function(){cb(res)}, 1000);
 	},
 
+	'account-facebook-friend-refresh-test': function(arg, cb) {
+
+	},
+
 	'account-register': function(arg, cb) {
 		async.waterfall([
 			function(cb) {
@@ -81,7 +85,7 @@ var api = {
 						accesstoken: arg.accesstoken
 					}, function(err) {
 						if(err)
-							cb(1);
+							cb(err);
 						else
 							cb(null, uniqid, passkey);
 					});
@@ -92,7 +96,8 @@ var api = {
 			if(err || !uniqid || !passkey)
 			{
 				cb({
-					state: 1
+					state: 1,
+					msg: err
 				})
 			}
 			else
@@ -238,16 +243,21 @@ var account = {
 		   arg.accesstoken
 		*/
 		friend: function(arg, cb) {
-
-			var result = [];
-
 			fb.api('me/friends', {access_token: arg.accesstoken}, function(res) {
-				for(var i in res.data)
-				{
-					console.log(res.data[i]);
-				}
-			});
+				mysqlClient.query(
+					"DELETE FROM `fb_friends` WHERE `uniqid` = ?",
+					[arg.uniqid]
+				);
 
+				var values = '';
+				for(var i in res.data)
+					values+= ",('" + arg.uniqid + "','" + res.data[i].id + "')";
+				values = values.substr(1);
+
+				mysqlClient.query(
+					"INSERT INTO `fb_friends` (`uniqid`, `fbid`) VALUES " + values
+				);
+			});
 		}
 	},
 
