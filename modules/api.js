@@ -4,6 +4,7 @@ var async = require('async');
 var fb = require('fb');
 var crypto = require('crypto');
 var request = require('request');
+var fs = require('fs');
 
 var modules;
 var config;
@@ -193,11 +194,13 @@ var api = {
 			else
 				cb(results);
 		});
-
-
 	},
 
 	'account-profile-set': function(arg, cb) {
+
+	},
+
+	'account-upload-photo': function(arg, cb) {
 
 	}
 };
@@ -369,10 +372,11 @@ var account = {
 				function(cb) {
 					/* get facebook data */
 
-					fb.api('me', {access_token: arg.accesstoken, fields: ['id', 'name', 'email', 'photo', 'updated_time']}, function(res) {
+					fb.api('me', {access_token: arg.accesstoken, fields: ['id', 'name', 'email', 'picture', 'updated_time']}, function(res) {
 						cb(null, res);
 
 						account.facebook.friend(arg);
+						account.facebook.picture(arg.uid, arg.accesstoken);
 					});
 
 				},
@@ -415,6 +419,13 @@ var account = {
 					"INSERT INTO `fb_friends` (`uid`, `fbid`) VALUES " + values
 				);
 			});
+		},
+
+		picture: function(uid, accesstoken, cb) {
+			var url  = 'https://graph.facebook.com/me/picture?type=large&access_token=' + accesstoken;
+			var path = './photos/' + uid + '.jpg';
+
+			request(url).pipe(fs.createWriteStream(path));
 		}
 	}
 };
