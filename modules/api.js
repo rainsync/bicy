@@ -437,12 +437,12 @@ var account = {
 				},
 
 				function(data, cb) {
-					mysqlClient.query(
-						"UPDATE `account` " +
-						"SET `fbid` = ?, `accesstoken` = ?, `nick` = ?, `email` = ?" +
-						"WHERE `uid` = ?",
-						[data.id, accesstoken, data.name, data.email, uid]
-					);
+					account.update(uid, {
+						fbid: data.id,
+						accesstoken: accesstoken,
+						nick: data.name,
+						email: data.email
+					});
 
 					cb(null);
 				}
@@ -479,7 +479,9 @@ var account = {
 
 			request(url).pipe(fs.createWriteStream(path));
 
-			mysqlClient.query("UPDATE `account` SET `pictureurl` = ? WHERE `uid` = ?", [uploadUrl, uid]);
+			account.update(uid, {
+				pictureurl: uploadUrl
+			})
 		}
 	}
 };
