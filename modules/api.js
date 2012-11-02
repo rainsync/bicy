@@ -123,7 +123,7 @@ var api = {
 	},
 
 	'account-profile-get': function(arg, cb) {
-		if(!arg.sid)
+		if(!arg._uid)
 		{
 			cb({
 				state: 1,
@@ -133,122 +133,78 @@ var api = {
 			return;
 		}
 
-		async.waterfall([
-			function(cb) {
-				account.session.get(arg.sid, function(uid) {
-					if(uid == null)
-						cb({
-							state: 1,
-							msg: 'SESSION DOES NOT EXIST'
-						});
-					else
-						cb(null, uid);
-				});
-			},
+		account.get(arg._uid, function(usr) {
+			if(usr)
+			{
+				if(!arg.fields)
+					arg.fields = 'nick,email,picture';
 
-			function(uid, cb) {
-				account.get(uid, function(usr) {
-					if(usr)
-					{
-						if(!arg.fields)
-							arg.fields = 'nick,email,picture';
-
-						var fields = arg.fields.split(',');
-						var results = {state: 0};
-						
-						for(var i in fields)
-						{
-							switch(fields[i])
-							{
-							case 'nick':
-								results.nick = usr.nick;
-								break;
-							case 'picture':
-								results.picture = usr.pictureurl;
-								break;
-							case 'email':
-								results.email = usr.email;
-								break;
-							}
-						}
-
-						cb(results);
-					}
-					else
-						cb({
-							state: 1,
-							msg: 'ACCOUNT ERROR'
-						})
-				});
-			}
-		],
-
-		function(err, results) {
-			if(err)
-				cb(err);
-			else
-				cb(results);
-		});
-	},
-
-	'account-profile-set': function(arg, cb) {
-		if(!arg.sid)
-		{
-			cb({
-				state: 1,
-				msg: 'SESSION DOES NOT EXIST'
-			});
-
-			return;
-		}
-
-		async.waterfall([
-			function(cb) {
-				account.session.get(arg.sid, function(uid) {
-					if(uid == null)
-						cb({
-							state: 1,
-							msg: 'SESSION DOES NOT EXIST'
-						});
-					else
-						cb(null, uid);
-				});
-			},
-
-			function(uid, cb) {
-				var changes = {};
-
-				for(var i in arg)
+				var fields = arg.fields.split(',');
+				var results = {state: 0};
+				
+				for(var i in fields)
 				{
-					switch(i)
+					switch(fields[i])
 					{
 					case 'nick':
-					case 'email':
-						changes[i] = arg[i];
+						results.nick = usr.nick;
 						break;
 					case 'picture':
-						var dataBuffer = new Buffer(arg[i], 'base64');
-
-						require("fs").writeFile('./pictures/' + uid + '.jpg', dataBuffer);
-
-						changes.pictureurl = 'http://bicy.kr/pictures/' + uid + '.jpg';
+						results.picture = usr.pictureurl;
+						break;
+					case 'email':
+						results.email = usr.email;
 						break;
 					}
 				}
 
-				account.update(uid, changes);
-
-				cb(null, {
-					state: 0
-				});
-			}
-		],
-
-		function(err, results) {
-			if(err)
-				cb(err);
-			else
 				cb(results);
+			}
+			else
+				cb({
+					state: 1,
+					msg: 'ACCOUNT ERROR'
+				})
+		});
+	},
+
+	'account-profile-set': function(arg, cb) {
+		console.log(arg);
+		if(!arg._uid)
+		{
+			cb({
+				state: 1,
+				msg: 'SESSION DOES NOT EXIST'
+			});
+
+			return;
+		}
+
+		var changes = {};
+		var uid = arg._uid;
+
+		for(var i in arg)
+		{
+			switch(i)
+			{
+			case 'nick':
+			case 'email':
+				changes[i] = arg[i];
+				break;
+			case 'picture':
+				var dataBuffer = new Buffer(arg[i], 'base64');
+
+				require("fs").writeFile('./pictures/' + uid + '.jpg', dataBuffer);
+
+				changes.pictureurl = 'http://bicy.kr/pictures/' + uid + '.jpg';
+				break;
+			}
+		}
+
+		account.update(uid, changes);
+
+		cb({
+			state: 0
 		});
 	}
 };
@@ -498,13 +454,32 @@ exports.ready = function() {
 	mysqlClient = global.mysqlClient;
 
 	function apiCall(name, arg, cb) {
+		function call() {
+			api[name](arg, function(result) {
+				cb(result);
+			});
+		}
+
 		for(var i in arg)
 			if(i.substr(0, 1) == '_')
 				delete arg[i];
 
-		api[name](arg, function(result) {
-			cb(result);
-		});
+		if(arg.sid)
+		{
+			account.session.get(arg.sid, function(uid) {
+				if(uid == null)
+					cb({
+						state: 1,
+						msg: 'SESSION DOES NOT EXIST'
+					});
+				else
+				{
+					arg._uid = uid;
+					call();
+				}
+			});
+		}
+		else call();
 	}
 
 	app.use(express.bodyParser());
