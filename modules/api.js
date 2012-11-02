@@ -190,9 +190,15 @@ var account = {
 	session: {
 		get: function(sid, cb) {
 			global.redisStore.get('session:' + sid, function(err, data) {
-				var parse = JSON.parse(data);
-
-				cb(parse.uid);
+				if(data)
+				{
+					var parse = JSON.parse(data);
+					cb(parse.uid);
+				}
+				else
+				{
+					cb(null);
+				}
 			});
 		},
 
