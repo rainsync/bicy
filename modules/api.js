@@ -519,6 +519,16 @@ exports.ready = function() {
 			var resCount = 0;
 
 			for(var i in parse)
+			{
+				if(i == 0 && !("type" in parse[i]))
+				{
+					for(var j in parse)
+						for(var k in parse[i])
+							parse[j][k] = parse[i][k];
+
+					results[i] = {state: 0};
+				}
+
 				(function(i){
 					if("type" in parse[i] && "function" == typeof api[parse[i].type])
 					{
@@ -530,7 +540,7 @@ exports.ready = function() {
 								res.send(JSON.stringify(results));
 						});
 					}
-					else
+					else if(i > 0)
 					{
 						results[i] = {state: 1, msg: 'INVALID TYPE'};
 						resCount++;
@@ -539,6 +549,7 @@ exports.ready = function() {
 							res.send(JSON.stringify(results));
 					}
 				})(i);
+			}
 		}
 		else
 		{
