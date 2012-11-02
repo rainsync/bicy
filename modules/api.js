@@ -197,11 +197,59 @@ var api = {
 	},
 
 	'account-profile-set': function(arg, cb) {
+		if(!arg.sid)
+		{
+			cb({
+				state: 1,
+				msg: 'SESSION DOES NOT EXIST'
+			});
 
-	},
+			return;
+		}
 
-	'account-upload-photo': function(arg, cb) {
+		async.waterfall([
+			function(cb) {
+				account.session.get(arg.sid, function(uid) {
+					if(uid == null)
+						cb({
+							state: 1,
+							msg: 'SESSION DOES NOT EXIST'
+						});
+					else
+						cb(null, uid);
+				});
+			},
 
+			function(uid, cb) {
+				var changes = {};
+
+				for(var i in arg)
+				{
+					switch(i)
+					{
+					case 'nick':
+					case 'email':
+						changes[i] = arg[i]
+						break;
+					case 'photo':
+						break;
+					}
+				}
+
+				account.update(uid, changes);
+
+				cb(null, {
+					state: 0
+				});
+			}
+		],
+
+		function(err, results) {
+			if(err)
+				cb(err);
+			else
+				cb(results);
+		});
 	}
 };
 
@@ -234,6 +282,22 @@ var account = {
 				else
 					cb(null);
 			}
+		);
+	},
+
+	update: function(uid, changes) {
+		var sets = '';
+
+		for(var i in changes)
+			sets+= ', `' + i + '` = \'' + changes[i] + '\'';
+
+		sets = sets.substr(1);
+
+		console.log(sets);
+
+		mysqlClient.query(
+			"UPDATE `account` SET" + sets + " WHERE `uid` = ?",
+			[uid]
 		);
 	},
 
