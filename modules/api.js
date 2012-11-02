@@ -562,7 +562,7 @@ exports.ready = function() {
 			var result;
 
 			if("type" in parse && "function" == typeof api[parse.type])
-				api[parse.type](parse, function(result) {
+				apiCall(parse.type, parse, function(result) {
 					res.send([result]);
 				});
 			else
@@ -575,7 +575,7 @@ exports.ready = function() {
 		var result;
 
 		if("function" == typeof api[type])
-			api[type]({}, function(result) {
+			apiCall(type, {}, function(result) {
 				res.send(result);
 			});
 		else
@@ -591,9 +591,6 @@ exports.ready = function() {
 			apiCall(type, arg, function(result) {
 				res.send(result);
 			});
-			/*api[type](arg, function(result) {
-				res.send(result);
-			});*/
 		else
 			res.send([{state: 1, msg: 'INVALID TYPE'}]);
 	});
