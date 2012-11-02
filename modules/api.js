@@ -19,7 +19,7 @@ API Reference
   @ account-register
     - (String) nick        : nick name
     - (String) accesstoken : facebook access token
-    - (String) photo       : base64 encoded jpeg file
+    - (String) picture      : base64 encoded jpeg file
 
     # Return
       - (Number) state    : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
@@ -40,7 +40,7 @@ API Reference
   ----------------------------------------------------------------------------------------------------------------
   @ account-profile-get
     - (String) sid    : session id
-    - (String) fields : (EXAM) email,photo,nick
+    - (String) fields : (EXAM) email,picture,nick
   ----------------------------------------------------------------------------------------------------------------
   ----------------------------------------------------------------------------------------------------------------
   ----------------------------------------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ var api = {
 					if(usr)
 					{
 						if(!arg.fields)
-							arg.fields = 'nick,email,photo';
+							arg.fields = 'nick,email,picture';
 
 						var fields = arg.fields.split(',');
 						var results = {state: 0};
@@ -169,7 +169,7 @@ var api = {
 							case 'nick':
 								results.nick = usr.nick;
 								break;
-							case 'photo':
+							case 'picture':
 								break;
 							case 'email':
 								results.email = usr.email;
@@ -231,7 +231,7 @@ var api = {
 					case 'email':
 						changes[i] = arg[i]
 						break;
-					case 'photo':
+					case 'picture':
 						break;
 					}
 				}
@@ -292,8 +292,6 @@ var account = {
 			sets+= ', `' + i + '` = \'' + changes[i] + '\'';
 
 		sets = sets.substr(1);
-
-		console.log(sets);
 
 		mysqlClient.query(
 			"UPDATE `account` SET" + sets + " WHERE `uid` = ?",
@@ -488,7 +486,7 @@ var account = {
 		picture: function(uid, accesstoken, cb) {
 			var filename = uid;
 			var url  = 'https://graph.facebook.com/me/picture?type=large&access_token=' + accesstoken;
-			var path = './photos/' + filename + '.jpg';
+			var path = './pictures/' + filename + '.jpg';
 			var uploadUrl = 'http://bicy.kr/pictures/' + filename + '.jpg';
 
 			request(url).pipe(fs.createWriteStream(path));
@@ -591,14 +589,14 @@ function isArray(obj)
 /*
 
 1.
-URL : http://api.bicy.com/profile-change/?photo=123123123
+URL : http://api.bicy.com/profile-change/?picture=123123123
 
 2.
 URL : http://api.bicy.com
 POST
 DATA=JSON.stringify({
 	type: profile-change,
-	photo: 123123123
+	picture: 123123123
 })
 
 3. 
