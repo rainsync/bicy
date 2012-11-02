@@ -50,17 +50,6 @@ var stateCode = {
 }
 
 var api = {
-	'test' : function(arg, cb) {
-		var res = {state: 0};
-		for(var i in arg)
-			res[i] = arg[i];
-		setTimeout(function(){cb(res)}, 1000);
-	},
-
-	'account-facebook-friend-refresh-test': function(arg, cb) {
-
-	},
-
 	'account-register': function(arg, cb) {
 		async.waterfall([
 			function(cb) {
@@ -168,7 +157,7 @@ var api = {
 					{
 						if(!arg.fields)
 							arg.fields = 'nick,email,photo';
-						
+
 						var fields = arg.fields.split(',');
 						var results = {state: 0};
 						
