@@ -19,22 +19,22 @@ API Reference
   @ account-register
     - (String) nick        : nick name
     - (String) accesstoken : facebook access token
-    - (String) picture      : base64 encoded jpeg file
+    - (String) picture     : base64 encoded jpeg file
 
     # Return
-      - (Number) state    : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
-      - (Number) uid   : unique id
-      - (String) passkey  : pass key
+      - (Number) state   : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
+      - (Number) uid     : unique id
+      - (String) passkey : pass key
   ----------------------------------------------------------------------------------------------------------------
   @ account-auth
     1. default auth
-      - (Number) uid  : unique id
+      - (Number) uid : unique id
       - (String) psk : pass key
     2. facebook auth
       - (String) accesstoken : facebook access token
 
     # Return
-      - (Number) state  : 0(OK) 1(FAILED) 2(INVALID_UNIQID) 3(INVALID_PASSKEY) 4(FACEBOOK_ERROR)
+      - (Number) state : 0(OK) 1(FAILED) 2(INVALID_UNIQID) 3(INVALID_PASSKEY) 4(FACEBOOK_ERROR)
       * if state == 0
         - (String) sid : session id
   ----------------------------------------------------------------------------------------------------------------
@@ -46,9 +46,6 @@ API Reference
   ----------------------------------------------------------------------------------------------------------------
 
 */
-var stateCode = {
-	OK: 0
-}
 
 var api = {
 	'account-register': function(arg, cb) {
@@ -62,7 +59,7 @@ var api = {
 			function(cb) {
 				/* register account */
 
-				account.register(null, function(uid, passkey) {
+				account.register(function(uid, passkey) {
 					cb(null, uid, passkey);
 				});
 			},
@@ -73,10 +70,7 @@ var api = {
 				if(!arg.accesstoken)
 					cb(null, uid, passkey);
 				else
-					account.facebook.link({
-						uid: uid,
-						accesstoken: arg.accesstoken
-					}, function(err) {
+					account.facebook.link(uid, arg.accesstoken, function(err) {
 						if(err)
 							cb(err);
 						else
@@ -230,7 +224,7 @@ var api = {
 					{
 					case 'nick':
 					case 'email':
-						changes[i] = arg[i]
+						changes[i] = arg[i];
 						break;
 					case 'picture':
 						break;
@@ -258,18 +252,21 @@ var api = {
 
 Account Object Reference
 
-account.register(argument, callback);
-  argument (JSON)     : 
-  callback (FUNCTION) : function(uniqId, passKey)
-
-account.auth(argument, callback);
-  argument (JSON)     : 
-  callback (FUNCTION) : 
+account.get(uid, callback) - 해당 uid의 정보를 데이터베이스에 요청하여 가져옴
+account.update(uid, changes) - 해당 uid의 정보를 업데이트
+account.register(argument, callback) - 계정 만들기
+account.auth(argument, callback) - 계정 인증
 
 facebook
-  account.facebook.link(argument, callback)
-    argument (JSON)     : 
-    callback (FUNCTION) : 
+  account.facebook.link(argument, callback) - 페이스북과 계정 연동
+  account.facebook.friend(argument, callback) - 페이스북에서 친구 목록 가져옴
+  account.facebook.picture(uid, accesstoken, callback) - 페이스북에서 사진 가져옴
+
+session
+  account.session.get(sid, callback) - 세션 아이디에서 uid를 얻어옴
+  account.session.make(uid, callback) - uid가 담긴 세션을 만듬
+  account.session.auth(uid, passkey, callback) - uid, passkey가 유효한지 확인한다
+  account.session.facebook(accesstoken, callback) - 페이스북에 해당 계정과 연동된 uid를 반환한
 
 */
 var account = {
@@ -300,7 +297,7 @@ var account = {
 		);
 	},
 
-	register: function(arg, cb) {
+	register: function(cb) {
 		async.waterfall([
 			function(cb) {
 				var md5 = crypto.createHash('md5');
@@ -408,19 +405,14 @@ var account = {
 	},
 
 	facebook: {
-		/*
-		  [account.facebook.link]
-		   arg.uid
-		   arg.accesstoken
-		*/
-		link: function(arg, cb) {
+		link: function(uid, accesstoken, cb) {
 			async.waterfall([
 				function(cb) {
 					/* check account */
 
 					mysqlClient.query(
 						"SELECT `accesstoken` FROM `account` WHERE `uid` = ?",
-						[arg.uid],
+						[uid],
 						function(err, results, fields) {
 							if(results.length != 1)
 								cb(1);
@@ -435,11 +427,11 @@ var account = {
 				function(cb) {
 					/* get facebook data */
 
-					fb.api('me', {access_token: arg.accesstoken, fields: ['id', 'name', 'email', 'picture', 'updated_time']}, function(res) {
+					fb.api('me', {access_token: accesstoken, fields: ['id', 'name', 'email', 'picture', 'updated_time']}, function(res) {
 						cb(null, res);
 
-						account.facebook.friend(arg);
-						account.facebook.picture(arg.uid, arg.accesstoken);
+						account.facebook.friend(uid, accesstoken);
+						account.facebook.picture(uid, accesstoken);
 					});
 
 				},
@@ -449,7 +441,7 @@ var account = {
 						"UPDATE `account` " +
 						"SET `fbid` = ?, `accesstoken` = ?, `nick` = ?, `email` = ?" +
 						"WHERE `uid` = ?",
-						[data.id, arg.accesstoken, data.name, data.email, arg.uid]
+						[data.id, accesstoken, data.name, data.email, uid]
 					);
 
 					cb(null);
@@ -461,21 +453,16 @@ var account = {
 			});
 		},
 
-		/*
-		  [account.facebook.friend]
-		   arg.uid
-		   arg.accesstoken
-		*/
-		friend: function(arg, cb) {
-			fb.api('me/friends', {access_token: arg.accesstoken}, function(res) {
+		friend: function(uid, accesstoken, cb) {
+			fb.api('me/friends', {access_token: accesstoken}, function(res) {
 				mysqlClient.query(
 					"DELETE FROM `fb_friends` WHERE `uid` = ?",
-					[arg.uid]
+					[uid]
 				);
 
 				var values = '';
 				for(var i in res.data)
-					values+= ",('" + arg.uid + "','" + res.data[i].id + "')";
+					values+= ",('" + uid + "','" + res.data[i].id + "')";
 				values = values.substr(1);
 
 				mysqlClient.query(
