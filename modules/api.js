@@ -422,10 +422,14 @@ var account = {
 		},
 
 		picture: function(uid, accesstoken, cb) {
+			var filename = uid;
 			var url  = 'https://graph.facebook.com/me/picture?type=large&access_token=' + accesstoken;
-			var path = './photos/' + uid + '.jpg';
+			var path = './photos/' + filename + '.jpg';
+			var uploadUrl = 'http://bicy.kr/pictures/' + filename + '.jpg';
 
 			request(url).pipe(fs.createWriteStream(path));
+
+			mysqlClient.query("UPDATE `account` SET `pictureurl` = ? WHERE `uid` = ?", [uploadUrl, uid]);
 		}
 	}
 };
