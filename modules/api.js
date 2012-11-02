@@ -169,7 +169,6 @@ var api = {
 	},
 
 	'account-profile-set': function(arg, cb) {
-		console.log(arg);
 		if(!arg._uid)
 		{
 			cb({
