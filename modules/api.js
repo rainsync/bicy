@@ -504,6 +504,12 @@ exports.ready = function() {
 	config = global.config;
 	mysqlClient = global.mysqlClient;
 
+	function apiCall(name, arg, cb) {
+		api[name](arg, function(result) {
+			cb(result);
+		});
+	}
+
 	app.use(express.bodyParser());
 
 	app.get('/', function(req, res) {
@@ -532,7 +538,7 @@ exports.ready = function() {
 				(function(i){
 					if("type" in parse[i] && "function" == typeof api[parse[i].type])
 					{
-						api[parse[i].type](parse[i], function(result) {
+						apiCall(parse[i].type, parse[i], function(result) {
 							results[i] = result;
 							resCount++;
 
@@ -582,9 +588,12 @@ exports.ready = function() {
 		var result;
 
 		if("function" == typeof api[type])
-			api[type](arg, function(result) {
+			apiCall(type, arg, function(result) {
 				res.send(result);
 			});
+			/*api[type](arg, function(result) {
+				res.send(result);
+			});*/
 		else
 			res.send([{state: 1, msg: 'INVALID TYPE'}]);
 	});
