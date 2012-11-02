@@ -274,7 +274,7 @@ var account = {
 					/* check account */
 
 					mysqlClient.query(
-						"SELECT `facebook` FROM `account` WHERE `uid` = ?",
+						"SELECT `accesstoken` FROM `account` WHERE `uid` = ?",
 						[arg.uid],
 						function(err, results, fields) {
 							if(results.length != 1)
