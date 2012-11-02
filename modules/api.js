@@ -260,7 +260,6 @@ Account Object Reference
 account.get(uid, callback) - 해당 uid의 정보를 데이터베이스에 요청하여 가져옴
 account.update(uid, changes) - 해당 uid의 정보를 업데이트
 account.register(argument, callback) - 계정 만들기
-account.auth(argument, callback) - 계정 인증
 
 facebook
   account.facebook.link(argument, callback) - 페이스북과 계정 연동
@@ -499,6 +498,10 @@ exports.ready = function() {
 	mysqlClient = global.mysqlClient;
 
 	function apiCall(name, arg, cb) {
+		for(var i in arg)
+			if(i.substr(0, 1) == '_')
+				delete arg[i];
+
 		api[name](arg, function(result) {
 			cb(result);
 		});
