@@ -3,6 +3,7 @@ var querystring = require('querystring');
 var async = require('async');
 var fb = require('fb');
 var crypto = require('crypto');
+var request = require('request');
 
 var modules;
 var config;
@@ -24,19 +25,21 @@ API Reference
       - (Number) uid   : unique id
       - (String) passkey  : pass key
   ----------------------------------------------------------------------------------------------------------------
-  @ account-login
-    1. default login
+  @ account-auth
+    1. default auth
       - (Number) uid  : unique id
-      - (String) passkey : pass key
-    2. facebook login
+      - (String) psk : pass key
+    2. facebook auth
       - (String) accesstoken : facebook access token
 
     # Return
       - (Number) state  : 0(OK) 1(FAILED) 2(INVALID_UNIQID) 3(INVALID_PASSKEY) 4(FACEBOOK_ERROR)
       * if state == 0
-        - (String) sessid : session id
+        - (String) sid : session id
   ----------------------------------------------------------------------------------------------------------------
-
+  @ account-profile-get
+    - (String) sid    : session id
+    - (String) fields : (EXAM) email,photo,nick
   ----------------------------------------------------------------------------------------------------------------
   ----------------------------------------------------------------------------------------------------------------
   ----------------------------------------------------------------------------------------------------------------
@@ -133,6 +136,80 @@ var api = {
 			account.session.auth(arg.uid, arg.psk, _cb);
 		else if(arg.accesstoken)
 			account.session.facebook(arg.accesstoken, _cb);
+	},
+
+	'account-profile-get': function(arg, cb) {
+		if(!arg.sid)
+		{
+			cb({
+				state: 1,
+				msg: 'SESSION DOES NOT EXIST'
+			});
+
+			return;
+		}
+
+		async.waterfall([
+			function(cb) {
+				account.session.get(arg.sid, function(uid) {
+					if(uid == null)
+						cb({
+							state: 1,
+							msg: 'SESSION DOES NOT EXIST'
+						});
+					else
+						cb(null, uid);
+				});
+			},
+
+			function(uid, cb) {
+				account.get(uid, function(usr) {
+					if(usr)
+					{
+						if(!arg.fields)
+							arg.fields = 'nick,email,photo';
+						
+						var fields = arg.fields.split(',');
+						var results = {state: 0};
+						
+						for(var i in fields)
+						{
+							switch(fields[i])
+							{
+							case 'nick':
+								results.nick = usr.nick;
+								break;
+							case 'photo':
+								break;
+							case 'email':
+								results.email = usr.email;
+								break;
+							}
+						}
+
+						cb(results);
+					}
+					else
+						cb({
+							state: 1,
+							msg: 'ACCOUNT ERROR'
+						})
+				});
+			}
+		],
+
+		function(err, results) {
+			if(err)
+				cb(err);
+			else
+				cb(results);
+		});
+
+
+	},
+
+	'account-profile-set': function(arg, cb) {
+
 	}
 };
 
@@ -155,6 +232,19 @@ facebook
 
 */
 var account = {
+	get: function(uid, cb) {
+		mysqlClient.query(
+			"SELECT * FROM `account` WHERE `uid` = ?",
+			[uid],
+			function(err, results, fields) {
+				if(results.length > 0)
+					cb(results[0]);
+				else
+					cb(null);
+			}
+		);
+	},
+
 	register: function(arg, cb) {
 		async.waterfall([
 			function(cb) {
