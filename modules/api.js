@@ -170,6 +170,7 @@ var api = {
 								results.nick = usr.nick;
 								break;
 							case 'picture':
+								results.picture = usr.pictureurl;
 								break;
 							case 'email':
 								results.email = usr.email;
