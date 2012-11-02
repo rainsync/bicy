@@ -227,6 +227,11 @@ var api = {
 						changes[i] = arg[i];
 						break;
 					case 'picture':
+						var dataBuffer = new Buffer(arg[i], 'base64');
+
+						require("fs").writeFile('./pictures/' + uid + '.jpg', dataBuffer);
+
+						changes.pictureurl = 'http://bicy.kr/pictures/' + uid + '.jpg';
 						break;
 					}
 				}
