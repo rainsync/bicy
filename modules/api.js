@@ -483,6 +483,11 @@ exports.ready = function() {
 
 	app.use(express.bodyParser());
 
+	app.use(function(req, res, next) {
+		res.header('Content-Type', 'application/json');
+		next();
+	});
+
 	app.get('/', function(req, res) {
 		res.send('this page is api');
 	});
