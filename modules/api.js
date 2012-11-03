@@ -205,6 +205,49 @@ var api = {
 		cb({
 			state: 0
 		});
+	},
+
+	'account-friend-list': function(arg, cb) {
+		if(!arg._uid)
+		{
+			cb({
+				state: 1,
+				msg: 'SESSION DOES NOT EXIST'
+			});
+
+			return;
+		}
+
+		async.waterfall([
+			function(cb) {
+				account.friend.facebook(arg._uid, function(res) {
+					cb(null, res);
+				});
+			},
+
+			function(res, cb) {
+				account.get(res, function(res) {
+					var results = [];
+
+					for(var i in res)
+					{
+						results.push({
+							uid: res[i].uid,
+							nick: res[i].nick
+						});
+					}
+
+					cb(null, results);
+				});
+			}
+		],
+
+		function(err, results) {
+			cb({
+				state: 0,
+				friends: results
+			})
+		});
 	}
 };
 
@@ -235,7 +278,7 @@ var account = {
 			mysqlClient.query(
 				"SELECT * FROM `account` WHERE `uid` IN (" + uid.join() +")",
 				function(err, results, fields) {
-					if(results.length > 0)
+					if(results)
 						cb(results);
 					else
 						cb(null);
@@ -306,16 +349,16 @@ var account = {
 	friend: {
 		facebook: function(uid, cb) {
 			mysqlClient.query(
-				"SELECT `account`.`uid` FROM `fb_friends`" +
-				"INNER JOIN `account` ON (`fb_friends`.`fbid` = `account`.`fbid`)" +
-				"WHERE `fb_friends`.`uid` = '?'",
+				"SELECT `account`.`uid` FROM `fb_friends` " +
+				"INNER JOIN `account` ON (`fb_friends`.`fbid` = `account`.`fbid`) " +
+				"WHERE `fb_friends`.`uid` = ? ",
 				[uid],
 				function(err, results, fields) {
-					if(results.length > 0)
+					if(results)
 					{
 						var res = [];
 						for(var i in results)
-							res.push(results[i]);
+							res.push(results[i].uid);
 						cb(res);
 					}
 					else cb(null);
