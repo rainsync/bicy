@@ -230,16 +230,31 @@ session
 */
 var account = {
 	get: function(uid, cb) {
-		mysqlClient.query(
-			"SELECT * FROM `account` WHERE `uid` = ?",
-			[uid],
-			function(err, results, fields) {
-				if(results.length > 0)
-					cb(results[0]);
-				else
-					cb(null);
-			}
-		);
+		if(isArray(uid))
+		{
+			mysqlClient.query(
+				"SELECT * FROM `account` WHERE `uid` IN (" + uid.join() +")",
+				function(err, results, fields) {
+					if(results.length > 0)
+						cb(results);
+					else
+						cb(null);
+				}
+			);
+		}
+		else
+		{
+			mysqlClient.query(
+				"SELECT * FROM `account` WHERE `uid` = ?",
+				[uid],
+				function(err, results, fields) {
+					if(results.length > 0)
+						cb(results[0]);
+					else
+						cb(null);
+				}
+			);
+		}
 	},
 
 	update: function(uid, changes) {
