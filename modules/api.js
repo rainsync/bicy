@@ -288,6 +288,27 @@ var account = {
 		});
 	},
 
+	friend: {
+		facebook: function(uid, cb) {
+			mysqlClient.query(
+				"SELECT `account`.`uid` FROM `fb_friends`" +
+				"INNER JOIN `account` ON (`fb_friends`.`fbid` = `account`.`fbid`)" +
+				"WHERE `fb_friends`.`uid` = '?'",
+				[uid],
+				function(err, results, fields) {
+					if(results.length > 0)
+					{
+						var res = [];
+						for(var i in results)
+							res.push(results[i]);
+						cb(res);
+					}
+					else cb(null);
+				}
+			);
+		}
+	},
+
 	session: {
 		get: function(sid, cb) {
 			global.redisStore.get('session:' + sid, function(err, data) {
