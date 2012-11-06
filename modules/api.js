@@ -251,6 +251,132 @@ var api = {
 	}
 };
 
+var race = {
+	create: function(uid, cb) {
+		async.waterfall([
+			function(cb) {
+				mysqlClient.query("INSERT INTO `race` SET `uid` = ?", [uid]);
+
+				mysqlClient.query("SELECT LAST_INSERT_ID() AS `no`", function(err, results, fields) {
+					cb(null, results[0].no);
+				});
+			},
+
+			function(no, cb) {
+				mysqlClient.query(
+					"INSERT INTO `race_participant` SET `uid` = ?",
+					[uid, 0, 0],
+					function(err, results, fields) {
+						cb(null, no);
+					}
+				);
+			}
+		],
+
+		function(err, no) {
+			cb(no);
+		});
+	},
+
+	invite: function(uid, raceNo, invites, cb) {
+		if(!isArray(invites)) invites = [invites];
+
+		async.waterfall([
+			function(cb) {
+				/* PERMISSION CHECK */
+
+				mysqlClient.query(
+					"SELECT * FROM `race_participant` WHERE `no` = ? AND `uid` = ?",
+					[raceNo, uid],
+					function(err, results, fields) {
+						if(results)
+							cb(null);
+						else
+							cb('PERMISSION ERROR');
+					}
+				)
+			},
+
+			function(cb) {
+				/* INVALID ACCOUNT CHECK */
+
+				mysqlClient.query(
+					"SELECT `uid` FROM `account` WHERE `uid` IN (" + string.join(invites, ',') + ")",
+					function(err, results, fields) {
+						if(results)
+						{
+							invites = [];
+							for(var i in results)
+								invites.push(results[i].uid);
+
+							cb(null);
+						}
+						else
+							cb('INVALID ACCOUNTS');
+					}
+				)
+			},
+
+			function(cb) {
+				var values = '';
+				for(var i in invites)
+					values+= ",('" + string.join([raceNo, uid, invites[i]], "', '") + "')";
+				values = values.substr(1);
+
+				mysqlClient.query(
+					"INSERT INTO `race_participant` (`no`, `uid`, `inviter`) VALUES " + values,
+					function(err, results, fields) {
+						cb(null);
+					}
+				);
+			}
+		],
+
+		function(err, result) {
+			if(err)
+				cb(err);
+			else
+				cb(null);
+		});
+	},
+
+	join: function(uid, raceNo, cb) {
+		async.waterfall([
+			function(cb) {
+				/* INVITE CHECK */
+
+				mysqlClient.query(
+					"SELECT * FROM `race_participant` WHERE `no` = ? AND `uid` = ? AND `state` = '0'",
+					[raceNo, uid],
+					function(err, results, fields) {
+						if(results)
+							cb(null);
+						else
+							cb('INVALID INVITE');
+					}
+				);
+			},
+
+			function(cb) {
+				mysqlClient.query(
+					"UPDATE `race_participant` SET `state` = '1' WHERE `no` = ?, `uid` = ? ",
+					[raceNo, uid],
+					function(err, results, fields) {
+						cb(null);
+					}
+				)
+			}
+		],
+
+		function(err) {
+			if(err)
+				cb(err);
+			else
+				cb(null);
+		});
+	}
+};
+
 /*
 
 Account Object Reference
