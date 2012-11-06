@@ -374,6 +374,10 @@ var race = {
 			else
 				cb(null);
 		});
+	},
+
+	record: {
+
 	}
 };
 
@@ -399,31 +403,52 @@ session
 */
 var account = {
 	get: function(uid, cb) {
-		if(isArray(uid))
-		{
-			mysqlClient.query(
-				"SELECT * FROM `account` WHERE `uid` IN (" + uid.join() +")",
-				function(err, results, fields) {
-					if(results)
-						cb(results);
-					else
-						cb(null);
-				}
-			);
-		}
-		else
-		{
-			mysqlClient.query(
-				"SELECT * FROM `account` WHERE `uid` = ?",
-				[uid],
-				function(err, results, fields) {
-					if(results.length > 0)
-						cb(results[0]);
-					else
-						cb(null);
-				}
-			);
-		}
+		if(!isArray(uid)) uid = [uid];
+
+		var results = [];
+		var fails = [];
+		var funcs = [];
+
+		for(var i in uid)	
+			(function(i){
+				funcs.push(function(cb) {
+					global.redisStore.get('cache.account.' + uid[i], function(err, data) {
+						if(data)
+						{
+							results.push(JSON.parse(data));
+							cb(null);
+						}
+						else
+						{
+							fails.push(uid[i]);
+							cb(null);
+						}
+					});
+				});
+			})(i);
+
+		async.parallel(funcs, function(err, res) {
+			if(fails.length > 0)
+			{
+				mysqlClient.query(
+					"SELECT * FROM `account` WHERE `uid` IN (" + fails.join() +")",
+					function(err, res, fields) {
+						if(res)
+						{
+							for(var i in res)
+							{
+								results.push(res[i]);
+								global.redisStore.set('cache.account.' + res[i].uid, JSON.stringify(res[i]));
+							}
+							cb(results);
+						}
+						else
+							cb(null);
+					}
+				);
+			}
+			else cb(results);
+		});
 	},
 
 	update: function(uid, changes) {
@@ -438,6 +463,8 @@ var account = {
 			"UPDATE `account` SET" + sets + " WHERE `uid` = ?",
 			[uid]
 		);
+
+		global.redisStore.del('cache.account.' + uid);
 	},
 
 	register: function(cb) {
