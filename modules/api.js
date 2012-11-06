@@ -453,14 +453,9 @@ var account = {
 
 				mysqlClient.query(
 					"INSERT INTO `account` SET passkey = ?",
-					[passkey],
-					function(err, results, fields) {
-						cb(null, passkey);
-					}
+					[passkey]
 				);
-			},
 
-			function(passkey, cb) {
 				mysqlClient.query("SELECT LAST_INSERT_ID() AS `uid`", function(err, results, fields) {
 					cb(null, results[0].uid, passkey);
 				});
