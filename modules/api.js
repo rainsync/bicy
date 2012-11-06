@@ -403,16 +403,18 @@ session
 */
 var account = {
 	get: function(uid, cb) {
-		if(!isArray(uid)) uid = [uid];
+		var uids;
+		if(!isArray(uid)) uids = [uid];
+		else uids = uid;
 
 		var results = [];
 		var fails = [];
 		var funcs = [];
 
-		for(var i in uid)	
+		for(var i in uids)	
 			(function(i){
 				funcs.push(function(cb) {
-					global.redisStore.get('cache.account.' + uid[i], function(err, data) {
+					global.redisStore.get('cache.account.' + uids[i], function(err, data) {
 						if(data)
 						{
 							results.push(JSON.parse(data));
@@ -420,7 +422,7 @@ var account = {
 						}
 						else
 						{
-							fails.push(uid[i]);
+							fails.push(uids[i]);
 							cb(null);
 						}
 					});
@@ -440,14 +442,14 @@ var account = {
 								results.push(res[i]);
 								global.redisStore.set('cache.account.' + res[i].uid, JSON.stringify(res[i]));
 							}
-							cb(results);
+							cb(isArray(uid)?results:results[0]);
 						}
 						else
 							cb(null);
 					}
 				);
 			}
-			else cb(results);
+			else cb(isArray(uid)?results:results[0]);
 		});
 	},
 
@@ -513,7 +515,9 @@ var account = {
 				if(data)
 				{
 					var parse = JSON.parse(data);
-					cb(parse.uid);
+					account.get(parse.uid, function(usr) {
+						cb(usr);
+					});
 				}
 				else
 				{
@@ -684,15 +688,16 @@ exports.ready = function() {
 
 		if(arg.sid)
 		{
-			account.session.get(arg.sid, function(uid) {
-				if(uid == null)
+			account.session.get(arg.sid, function(usr) {
+				if(usr == null)
 					cb({
 						state: 1,
-						msg: 'SESSION DOES NOT EXIST'
+						msg: 'SESSION DOES NOT EXISTs'
 					});
 				else
 				{
-					arg._uid = uid;
+					arg._uid = usr.uid;
+					arg._usr = usr;
 					call();
 				}
 			});
