@@ -367,6 +367,16 @@ var race = {
 						cb(null);
 					}
 				)
+			},
+
+			function(cb) {
+				var info = {
+					
+				};
+
+				global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(info));
+
+				cb(null);
 			}
 		],
 
@@ -804,6 +814,13 @@ function isArray(obj)
 		return true;
 	else
 		return false;
+}
+
+function dot() {
+	var res = '';
+	for(var i in arguments)
+		res+= '.' + arguments[i];
+	return res.substr(1);
 }
 
 /*
