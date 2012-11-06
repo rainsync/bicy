@@ -274,7 +274,9 @@ var race = {
 		],
 
 		function(err, no) {
-			cb(no);
+			race.join(uid, no, function() {
+				cb(no);
+			});
 		});
 	},
 
