@@ -441,29 +441,21 @@ var account = {
 	},
 
 	register: function(cb) {
-		async.waterfall([
-			function(cb) {
-				var md5 = crypto.createHash('md5');
-				md5.update((new Date).getTime().toString());
-				md5.update(Math.random().toString());
-				md5.update(Math.random().toString());
-				md5.update(Math.random().toString());
+		var md5 = crypto.createHash('md5');
+		md5.update((new Date).getTime().toString());
+		md5.update(Math.random().toString());
+		md5.update(Math.random().toString());
+		md5.update(Math.random().toString());
 
-				var passkey = md5.digest('hex');
+		var passkey = md5.digest('hex');
 
-				mysqlClient.query(
-					"INSERT INTO `account` SET passkey = ?",
-					[passkey]
-				);
+		mysqlClient.query(
+			"INSERT INTO `account` SET passkey = ?",
+			[passkey]
+		);
 
-				mysqlClient.query("SELECT LAST_INSERT_ID() AS `uid`", function(err, results, fields) {
-					cb(null, results[0].uid, passkey);
-				});
-			}
-		],
-
-		function(err, uid, passkey) {
-			cb(uid, passkey);
+		mysqlClient.query("SELECT LAST_INSERT_ID() AS `uid`", function(err, results, fields) {
+			cb(results[0].uid, passkey);
 		});
 	},
 
