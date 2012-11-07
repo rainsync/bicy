@@ -53,6 +53,17 @@ var api = {
 			function(cb) {
 				/* check arguments */
 
+				if(arg.accesstoken)
+				{
+					account.auth(arg.accesstoken, function(uid) {
+						if(uid) {
+							account.get(uid, function(usr) {
+								cb(1, uid, passkey);
+							});
+						}
+					});
+				}
+
 				cb(null);
 			},
 
