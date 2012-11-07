@@ -404,8 +404,12 @@ var race = {
 	},
 
 	record: {
-		push: function(uid, raceNo, str) {
-			global.redisStore.rpush(dot('race', raceNo, uid, 'record'), str);
+		push: function(uid, raceNo, arg) {
+			if(isArray(arg))
+				for(var i in arg)
+					global.redisStore.rpush(dot('race', raceNo, uid, 'record'), arg[i]);
+			else
+				global.redisStore.rpush(dot('race', raceNo, uid, 'record'), arg);
 		},
 
 		range: function(uid, raceNo, start, end, cb) {
