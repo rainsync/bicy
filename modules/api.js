@@ -319,20 +319,23 @@ var race = {
 			},
 
 			function(no, cb) {
-				mysqlClient.query(
-					"INSERT INTO `race_participant` SET `uid` = ?",
-					[uid, 0, 0],
-					function(err, results, fields) {
-						cb(null, no);
-					}
-				);
+				race.invite(uid, no, uid, function(err) {
+					cb(err, no);
+				});
+			},
+
+			function(no, cb) {
+				race.join(uid, no, function(err) {
+					cb(err, no);
+				});
 			}
 		],
 
 		function(err, no) {
-			race.join(uid, no, function() {
+			if(err)
+				cb(null);
+			else if(no)
 				cb(no);
-			});
 		});
 	},
 
@@ -343,16 +346,19 @@ var race = {
 			function(cb) {
 				/* PERMISSION CHECK */
 
-				mysqlClient.query(
-					"SELECT * FROM `race_participant` WHERE `no` = ? AND `uid` = ?",
-					[raceNo, uid],
-					function(err, results, fields) {
-						if(results)
-							cb(null);
-						else
-							cb('PERMISSION ERROR');
-					}
-				)
+				if(uid == invites[0])
+					cb(null);
+				else
+					mysqlClient.query(
+						"SELECT * FROM `race_participant` WHERE `no` = ? AND `uid` = ?",
+						[raceNo, uid],
+						function(err, results, fields) {
+							if(results)
+								cb(null);
+							else
+								cb('PERMISSION ERROR');
+						}
+					);
 			},
 
 			function(cb) {
@@ -372,7 +378,7 @@ var race = {
 						else
 							cb('INVALID ACCOUNTS');
 					}
-				)
+				);
 			},
 
 			function(cb) {
