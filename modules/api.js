@@ -251,6 +251,23 @@ var api = {
 	}
 };
 
+/*
+
+Race Object Reference
+
+race.create(uid, callback) - 레이스 생성
+race.invite(uid, raceNo, invites, callback) - 레이스 초대
+race.join(uid, raceNo, callback) - 레이스 참여
+race.info(uid, raceNo, callback) - 레이스 개인 정보 읽기
+race.info(uid, raceNo, newInfo) - 레이스 개인 정보 쓰기
+
+record
+  race.record.push(uid, raceNo, str) - 위치 정보 넣기
+  race.record.range(uid, raceNo, start, end, callback) - 위치 정보 가져오기
+  race.record.length(uid, raceNo, callback) - 위치 정보의 갯수
+
+*/
+
 var race = {
 	create: function(uid, cb) {
 		async.waterfall([
