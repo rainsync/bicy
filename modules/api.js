@@ -296,7 +296,17 @@ var api = {
 	},
 
 	'race-invite': function(arg, cb) {
-
+		race.invite(arg._uid, arg.no, arg.targets, function(err) {
+			if(err)
+				cb({
+					state: 1,
+					msg: err
+				});
+			else
+				cb({
+					state: 0
+				});
+		});
 	},
 
 	'race-join': function(arg, cb) {
