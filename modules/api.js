@@ -266,7 +266,33 @@ var api = {
 	},
 
 	'race-create': function(arg, cb) {
+		async.waterfall([
+			function(cb) {
+				if(arg._usr.raceno == 0)
+					cb(null);
+				else
+					cb('ALREADY RACE');
+			},
 
+			function(cb) {
+				race.create(arg._uid, function(no) {
+					cb({
+						state: 0,
+						no: no
+					})
+				});
+			}
+		],
+
+		function(err, results) {
+			if(err)
+				cb({
+					state: 1,
+					msg: 'ALREADY RACE'
+				});
+			else
+				cb(results);
+		});
 	},
 
 	'race-invite': function(arg, cb) {
