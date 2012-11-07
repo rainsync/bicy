@@ -371,7 +371,7 @@ var race = {
 
 			function(cb) {
 				var info = {
-					
+
 				};
 
 				global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(info));
@@ -389,7 +389,27 @@ var race = {
 	},
 
 	record: {
+		push: function(uid, raceNo, str) {
+			global.redisStore.rpush(dot('race', raceNo, uid, 'record'), str);
+		},
 
+		range: function(uid, raceNo, start, end, cb) {
+			global.redisStore.lrange(dot('race', raceNo, uid, 'record'), start, end, function(err, res) {
+				if(err)
+					cb(null);
+				else
+					cb(res);
+			});
+		},
+
+		length: function(uid, raceNo, cb) {
+			global.redisStore.llen(dot('race', raceNo, uid, 'record'), function(err, res) {
+				if(err)
+					cb(null);
+				else
+					cb(res);
+			});
+		}
 	}
 };
 
