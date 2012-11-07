@@ -248,7 +248,31 @@ var api = {
 				friends: results
 			})
 		});
-	}
+	},
+
+	'race-create': function(arg, cb) {
+
+	},
+
+	'race-invite': function(arg, cb) {
+
+	},
+
+	'race-join': function(arg, cb) {
+
+	},
+
+	'race-info': function(arg, cb) {
+
+	},
+
+	'race-summary': function(arg, cb) {
+
+	},
+
+	'race-record': function(arg, cb) {
+
+	},
 };
 
 /*
@@ -554,6 +578,47 @@ var account = {
 		mysqlClient.query("SELECT LAST_INSERT_ID() AS `uid`", function(err, results, fields) {
 			cb(results[0].uid, passkey);
 		});
+	},
+
+	auth: function() {
+		if(arguments.length == 3)
+		{ // uid & passkey
+			var uid = arguments[0];
+			var passkey = arguments[1];
+			var cb = arguments[2];
+
+			mysqlClient.query(
+				"SELECT `uid` FROM `account` WHERE `uid` = ? AND `passkey` = ?",
+				[uid, passkey],
+				function(err, results, fields) {
+					if(results.length > 0)
+						cb(uid);
+					else
+						cb(null);
+				}
+			);
+		}
+		else if(arguments.length == 2)
+		{ // facebook
+			var accesstoken = arguments[0];
+			var cb = arguments[1];
+
+			fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
+				if(res.id)
+				{
+					mysqlClient.query(
+						"SELECT `uid` FROM `account` WHERE `fbid` = ?",
+						[res.id],
+						function(err, results, fields) {
+							if(results.length > 0)
+								cb(results[0].uid);
+							else
+								cb(null);
+						}
+					);
+				}
+			});
+		}
 	},
 
 	friend: {
