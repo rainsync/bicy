@@ -388,6 +388,21 @@ var race = {
 		});
 	},
 
+	info: function(uid, raceNo) {
+		if("function" == typeof arguments[2])
+		{ // Get
+			var cb = arguments[2];
+
+			global.redisStore.get(dot('race', raceNo, uid), function(err, res) {
+				cb(res);
+			});
+		}
+		else
+		{ // Set
+			global.redisStore.set(dot('race', raceNo, uid), arguments[2]);
+		}
+	},
+
 	record: {
 		push: function(uid, raceNo, str) {
 			global.redisStore.rpush(dot('race', raceNo, uid, 'record'), str);
