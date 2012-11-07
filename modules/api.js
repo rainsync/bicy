@@ -103,12 +103,16 @@ var api = {
 	},
 
 	'account-auth': function(arg, cb) {
-		function _cb(sid) {
-			if(sid)
-				cb({
-					state: 0,
-					sessid: sid
-				})
+		function _cb(uid) {
+			if(uid)
+			{
+				account.session.make(uid, function(sid) {
+					cb({
+						state: 0,
+						sessid: sid
+					})
+				});
+			}
 			else
 				cb({
 					state: 1,
@@ -117,9 +121,9 @@ var api = {
 		}
 
 		if(arg.uid)
-			account.session.auth(arg.uid, arg.psk, _cb);
+			account.auth(arg.uid, arg.psk, _cb);
 		else if(arg.accesstoken)
-			account.session.facebook(arg.accesstoken, _cb);
+			account.auth(arg.accesstoken, _cb);
 	},
 
 	'account-profile-get': function(arg, cb) {
@@ -687,7 +691,7 @@ var account = {
 			makeSessionId();
 		},
 
-		auth: function(uid, passkey, cb) {
+		/*auth: function(uid, passkey, cb) {
 			mysqlClient.query(
 				"SELECT `uid` FROM `account` WHERE `uid` = ? AND `passkey` = ?",
 				[uid, passkey],
@@ -716,7 +720,7 @@ var account = {
 					);
 				}
 			});
-		}
+		}*/
 	},
 
 	facebook: {
