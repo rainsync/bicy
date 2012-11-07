@@ -411,7 +411,7 @@ var race = {
 			var cb = arguments[2];
 
 			global.redisStore.get(dot('race', raceNo, uid), function(err, res) {
-				cb(res);
+				cb(JSON.parse(res);
 			});
 		}
 		else
