@@ -618,20 +618,50 @@ var account = {
 			var accesstoken = arguments[0];
 			var cb = arguments[1];
 
-			fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
-				if(res.id)
-				{
+			async.waterfall([
+				function(cb) {
 					mysqlClient.query(
-						"SELECT `uid` FROM `account` WHERE `fbid` = ?",
-						[res.id],
+						"SELECT `uid` FROM `account` WHERE `accesstoken` = ?",
+						[accesstoken],
 						function(err, results, fields) {
 							if(results.length > 0)
-								cb(results[0].uid);
+								cb(null, results[0].uid);
 							else
 								cb(null);
 						}
 					);
+				},
+
+				function(uid, cb) {
+					if(uid)
+					{
+						cb(null, uid);
+						return;
+					}
+
+					fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
+						if(res.id)
+						{
+							mysqlClient.query(
+								"SELECT `uid` FROM `account` WHERE `fbid` = ?",
+								[res.id],
+								function(err, results, fields) {
+									if(results.length > 0)
+										cb(null, results[0].uid);
+									else
+										cb(null);
+								}
+							);
+						}
+					});
 				}
+			],
+
+			function(err, uid) {
+				if(err)
+					cb(null);
+				else
+					cb(uid);
 			});
 		}
 	},
