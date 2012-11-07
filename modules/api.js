@@ -297,8 +297,8 @@ Race Object Reference
 race.create(uid, callback) - 레이스 생성
 race.invite(uid, raceNo, invites, callback) - 레이스 초대
 race.join(uid, raceNo, callback) - 레이스 참여
-race.info(uid, raceNo, callback) - 레이스 개인 정보 읽기
-race.info(uid, raceNo, newInfo) - 레이스 개인 정보 쓰기
+race.metadata(uid, raceNo, callback) - 레이스 메타데이터 읽기
+race.metadata(uid, raceNo, newInfo) - 레이스 메타데이터 쓰기
 
 record
   race.record.push(uid, raceNo, str) - 위치 정보 넣기
@@ -416,6 +416,8 @@ var race = {
 			},
 
 			function(cb) {
+				account.update(uid, {raceno: raceNo});
+
 				mysqlClient.query(
 					"UPDATE `race_participant` SET `state` = '1' WHERE `no` = ?, `uid` = ? ",
 					[raceNo, uid],
@@ -426,11 +428,11 @@ var race = {
 			},
 
 			function(cb) {
-				var info = {
+				var metadata = {
 
 				};
 
-				global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(info));
+				global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(metadata));
 
 				cb(null);
 			}
@@ -444,7 +446,7 @@ var race = {
 		});
 	},
 
-	info: function(uid, raceNo) {
+	metadata: function(uid, raceNo) {
 		if("function" == typeof arguments[2])
 		{ // Get
 			var cb = arguments[2];
