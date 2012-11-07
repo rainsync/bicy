@@ -310,7 +310,17 @@ var api = {
 	},
 
 	'race-join': function(arg, cb) {
-
+		race.join(arg._uid, arg.no, function(err) {
+			if(err)
+				cb({
+					state: 1,
+					msg: err
+				});
+			else
+				cb({
+					state: 0
+				});
+		});
 	},
 
 	'race-info': function(arg, cb) {
