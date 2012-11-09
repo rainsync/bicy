@@ -17,9 +17,8 @@ API Reference
 
 [ACCOUNT]
   @ account-register
-    - (String) nick        : nick name
+    1. facebook register
     - (String) accesstoken : facebook access token
-    - (String) picture     : base64 encoded jpeg file
 
     # Return
       - (Number) state   : 0(OK) 1(FAILED) 2(FACEBOOK_ERROR)
@@ -34,15 +33,57 @@ API Reference
       - (String) accesstoken : facebook access token
 
     # Return
-      - (Number) state : 0(OK) 1(FAILED) 2(INVALID_UNIQID) 3(INVALID_PASSKEY) 4(FACEBOOK_ERROR)
-      * if state == 0
-        - (String) sid : session id
+      {
+      	state,
+      	sid: (session id)
+      }
   ----------------------------------------------------------------------------------------------------------------
   @ account-profile-get
     - (String) sid    : session id
     - (String) fields : (EXAM) email,picture,nick
   ----------------------------------------------------------------------------------------------------------------
+  @ account-profile-set
+    - (String) nick
+    - (String) email
+
+    # Return
+      {
+	    state
+      }
   ----------------------------------------------------------------------------------------------------------------
+  @ account-friend-list
+    - (String) sid : session id
+
+    # Return
+      {
+	    state,
+	    friends: [{uid, nick}...]
+      }
+  ----------------------------------------------------------------------------------------------------------------
+  @ race-create
+    # Return
+      {
+	    state,
+	    no: (race no)
+      }
+  ----------------------------------------------------------------------------------------------------------------
+  @ race-invite
+    - (String) sid     : session id
+    - (Number) targets : target uid
+    - (Array) targets  : many of target uid (array type)
+  ----------------------------------------------------------------------------------------------------------------
+  @ race-join
+    - (String) sid : session id
+    - (Number) no  : race no
+  ----------------------------------------------------------------------------------------------------------------
+  @ race-summary
+    - (String) sid : session id
+  ----------------------------------------------------------------------------------------------------------------
+  @ race-record
+    - (String) sid  : session id
+    - (String) data : record data
+  ----------------------------------------------------------------------------------------------------------------
+  @ cache-clear
   ----------------------------------------------------------------------------------------------------------------
 
 */
@@ -96,7 +137,7 @@ var api = {
 		function(err, uid, passkey) {
 			if(err)
 			{
-				cb(err)
+				cb(err);
 			}
 			else
 			{
@@ -121,14 +162,14 @@ var api = {
 					cb({
 						state: 0,
 						sessid: sid
-					})
+					});
 				});
 			}
 			else
 				cb({
 					state: 1,
 					msg: 'LOGIN FAILED'
-				})
+				});
 		}
 
 		if(arg.uid)
@@ -179,7 +220,7 @@ var api = {
 				cb({
 					state: 1,
 					msg: 'ACCOUNT ERROR'
-				})
+				});
 		});
 	},
 
@@ -261,7 +302,7 @@ var api = {
 			cb({
 				state: 0,
 				friends: results
-			})
+			});
 		});
 	},
 
@@ -424,6 +465,7 @@ Race Object Reference
 race.create(uid, callback) - 레이스 생성
 race.invite(uid, raceNo, invites, callback) - 레이스 초대
 race.join(uid, raceNo, callback) - 레이스 참여
+race.participant(raceNo, callback) - 레이스 참가자 목록
 race.metadata(uid, raceNo, callback) - 레이스 메타데이터 읽기
 race.metadata(uid, raceNo, newInfo) - 레이스 메타데이터 쓰기
 
@@ -557,7 +599,7 @@ var race = {
 					function(err, results, fields) {
 						cb(null);
 					}
-				)
+				);
 			},
 
 			function(cb) {
@@ -922,9 +964,9 @@ var account = {
 						[uid],
 						function(err, results, fields) {
 							if(results.length != 1)
-								cb(1);
+								cb(true);
 							else if(results[0].facebook == 1)
-								cb(2);
+								cb(true);
 							else
 								cb(null);
 						}
@@ -988,7 +1030,7 @@ var account = {
 
 			account.update(uid, {
 				pictureurl: uploadUrl
-			})
+			});
 		}
 	}
 };
@@ -1135,32 +1177,3 @@ function dot() {
 		res+= '.' + arguments[i];
 	return res.substr(1);
 }
-
-/*
-
-1.
-URL : http://api.bicy.com/profile-change/?picture=123123123
-
-2.
-URL : http://api.bicy.com
-POST
-DATA=JSON.stringify({
-	type: profile-change,
-	picture: 123123123
-})
-
-3. 
-URL : http://api.bicy.com
-POST
-[{
-	type: ...
-	text: ...	
-},{
-	type: ...
-	text: ...	
-},{
-	type: ...
-	text: ...	
-}]
-
-*/
