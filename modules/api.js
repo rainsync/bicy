@@ -542,7 +542,7 @@ var race = {
 		}
 		else
 		{ // Set
-			global.redisStore.set(dot('race', raceNo, uid), arguments[2]);
+			global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(arguments[2]));
 		}
 	},
 
