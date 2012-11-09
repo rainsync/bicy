@@ -299,7 +299,7 @@ var api = {
 	},
 
 	'race-invite': function(arg, cb) {
-		race.invite(arg._uid, arg.no, arg.targets, function(err) {
+		race.invite(arg._uid, arg._usr.raceno, arg.targets, function(err) {
 			if(err)
 				cb({
 					state: 1,
@@ -448,7 +448,7 @@ var race = {
 				values = values.substr(1);
 
 				mysqlClient.query(
-					"INSERT INTO `race_participant` (`no`, `uid`, `inviter`) VALUES " + values,
+					"INSERT INTO `race_participant` (`no`, `inviter`, `uid`) VALUES " + values,
 					function(err, results, fields) {
 						cb(null);
 					}
