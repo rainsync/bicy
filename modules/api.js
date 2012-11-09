@@ -336,6 +336,10 @@ var api = {
 
 	'race-record': function(arg, cb) {
 		race.record.push(arg._uid, arg._usr.raceno, arg.pos);
+
+		cb({
+			state: 0
+		});
 	},
 
 	'cache-clear': function(arg, cb) {
