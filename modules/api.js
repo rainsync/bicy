@@ -334,6 +334,17 @@ var api = {
 	'race-record': function(arg, cb) {
 		race.record.push(arg._uid, arg.no, arg.pos);
 	},
+
+	'cache-clear': function(arg, cb) {
+		redisStore.keys('cache.*', function(err, res) {
+			for(var i in res)
+				redisStore.del(res[i]);
+		});
+
+		cb({
+			state: 0
+		});
+	},
 };
 
 /*
