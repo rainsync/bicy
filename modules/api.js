@@ -411,7 +411,7 @@ var race = {
 				/* INVALID ACCOUNT CHECK */
 
 				mysqlClient.query(
-					"SELECT `uid` FROM `account` WHERE `uid` IN (" + string.join(invites, ',') + ")",
+					"SELECT `uid` FROM `account` WHERE `uid` IN (" + invites.join(',') + ")",
 					function(err, results, fields) {
 						if(results)
 						{
@@ -430,7 +430,7 @@ var race = {
 			function(cb) {
 				var values = '';
 				for(var i in invites)
-					values+= ",('" + string.join([raceNo, uid, invites[i]], "', '") + "')";
+					values+= ",('" + [raceNo, uid, invites[i]].join("', '") + "')";
 				values = values.substr(1);
 
 				mysqlClient.query(
