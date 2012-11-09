@@ -335,7 +335,7 @@ var api = {
 	},
 
 	'race-record': function(arg, cb) {
-		race.record.push(arg._uid, arg.no, arg.pos);
+		race.record.push(arg._uid, arg._usr.raceno, arg.pos);
 	},
 
 	'cache-clear': function(arg, cb) {
