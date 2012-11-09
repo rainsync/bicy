@@ -695,33 +695,30 @@ var account = {
 							if(results.length > 0)
 								cb(null, results[0].uid);
 							else
-								cb(null);
+								cb(null, 0);
 						}
 					);
 				},
 
 				function(uid, cb) {
 					if(uid)
-					{
 						cb(null, uid);
-						return;
-					}
-
-					fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
-						if(res.id)
-						{
-							mysqlClient.query(
-								"SELECT `uid` FROM `account` WHERE `fbid` = ?",
-								[res.id],
-								function(err, results, fields) {
-									if(results.length > 0)
-										cb(null, results[0].uid);
-									else
-										cb(null);
-								}
-							);
-						}
-					});
+					else
+						fb.api('me', {access_token: accesstoken, fields: ['id']}, function(res) {
+							if(res.id)
+							{
+								mysqlClient.query(
+									"SELECT `uid` FROM `account` WHERE `fbid` = ?",
+									[res.id],
+									function(err, results, fields) {
+										if(results.length > 0)
+											cb(null, results[0].uid);
+										else
+											cb(null);
+									}
+								);
+							}
+						});
 				}
 			],
 
