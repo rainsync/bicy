@@ -271,15 +271,18 @@ var api = {
 				if(arg._usr.raceno == 0)
 					cb(null);
 				else
-					cb('ALREADY RACE');
+					cb(true);
 			},
 
 			function(cb) {
 				race.create(arg._uid, function(no) {
-					cb({
-						state: 0,
-						no: no
-					})
+					if(no)
+						cb(null, {
+							state: 0,
+							no: no
+						});
+					else
+						cb(true);
 				});
 			}
 		],
