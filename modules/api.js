@@ -331,7 +331,70 @@ var api = {
 	},
 
 	'race-summary': function(arg, cb) {
+		var metadata, funcs;
 
+		async.parallel({
+			metadata: function(cb) {
+				race.metadata(arg._uid, arg.no, function(metadata) {
+					cb(null, metadata);
+				});
+			},
+
+			participant: function(cb) {
+				race.participant(arg.no, function(participant) {
+					cb(null, participant);
+				});
+			}
+		},
+
+		function(err, results) {
+			funcs = {};
+			metadata = results.metadata;
+
+			for(var i in results.participant)
+			{
+				if(results.participant[i] != arg._uid)
+				{
+					(function(uid){
+						funcs[uid] = function(cb) {
+							if("undefined" == typeof metadata.last) metadata.last = {};
+							if("undefined" == typeof metadata.last[uid]) metadata.last[uid] = 0;
+
+							async.waterfall([
+								function(cb) {
+									race.record.length(uid, arg.no, function(length) {										if(length > metadata.last[uid])
+											cb(null, length);
+										else
+											cb(true);
+									});
+								},
+
+								function(length, cb) {
+									race.record.range(uid, arg.no, metadata.last[uid], length, function(res) {
+										cb(null, res);
+									});
+
+									metadata.last[uid] = length;
+								}
+							],
+
+							function(err, results) {
+								if(err)
+									cb(null);
+								else
+									cb(null, results);
+							});
+						};
+					})(results.participant[i]);
+				}
+			}
+
+			async.parallel(funcs, function(err, results) {
+				race.metadata(arg._uid, arg.no, metadata);
+				results.state = 0;
+				cb(results);
+			});
+		});
 	},
 
 	'race-record': function(arg, cb) {
