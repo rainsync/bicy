@@ -516,6 +516,21 @@ var race = {
 		});
 	},
 
+	participant: function(raceNo, cb) {
+		mysqlClient.query(
+			"SELECT `uid` FROM `race_participant` WHERE `no` = ?",
+			[raceNo],
+			function(err, results, fields) {
+				var res = [];
+
+				for(var i in results)
+					res.push(results[i].uid);
+
+				cb(res);
+			}
+		);
+	},
+
 	metadata: function(uid, raceNo) {
 		if("function" == typeof arguments[2])
 		{ // Get
