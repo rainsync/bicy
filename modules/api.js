@@ -58,13 +58,16 @@ var api = {
 					account.auth(arg.accesstoken, function(uid) {
 						if(uid) {
 							account.get(uid, function(usr) {
-								cb(1, uid, passkey);
+								cb({
+									state: 0,
+									uid: uid,
+									passkey: usr.passkey
+								});
 							});
 						}
 					});
 				}
-
-				cb(null);
+				else cb(null);
 			},
 
 			function(cb) {
@@ -91,12 +94,9 @@ var api = {
 		],
 
 		function(err, uid, passkey) {
-			if(err || !uid || !passkey)
+			if(err)
 			{
-				cb({
-					state: 1,
-					msg: err
-				})
+				cb(err)
 			}
 			else
 			{
