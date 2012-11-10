@@ -9,6 +9,7 @@ var fs = require('fs');
 var modules;
 var config;
 var mysqlClient;
+var redisStore;
 
 var app = express();
 /*
@@ -641,13 +642,13 @@ var race = {
 		{ // Get
 			var cb = arguments[2];
 
-			global.redisStore.get(dot('race', raceNo, uid), function(err, res) {
+			redisStore.get(dot('race', raceNo, uid), function(err, res) {
 				cb(JSON.parse(res));
 			});
 		}
 		else
 		{ // Set
-			global.redisStore.set(dot('race', raceNo, uid), JSON.stringify(arguments[2]));
+			redisStore.set(dot('race', raceNo, uid), JSON.stringify(arguments[2]));
 		}
 	},
 
@@ -655,13 +656,13 @@ var race = {
 		push: function(uid, raceNo, arg) {
 			if(isArray(arg))
 				for(var i in arg)
-					global.redisStore.rpush(dot('race', raceNo, uid, 'record'), arg[i]);
+					redisStore.rpush(dot('race', raceNo, uid, 'record'), arg[i]);
 			else
 				global.redisStore.rpush(dot('race', raceNo, uid, 'record'), arg);
 		},
 
 		range: function(uid, raceNo, start, end, cb) {
-			global.redisStore.lrange(dot('race', raceNo, uid, 'record'), start, end, function(err, res) {
+			redisStore.lrange(dot('race', raceNo, uid, 'record'), start, end, function(err, res) {
 				if(err)
 					cb(null);
 				else
@@ -670,7 +671,7 @@ var race = {
 		},
 
 		length: function(uid, raceNo, cb) {
-			global.redisStore.llen(dot('race', raceNo, uid, 'record'), function(err, res) {
+			redisStore.llen(dot('race', raceNo, uid, 'record'), function(err, res) {
 				if(err)
 					cb(null);
 				else
@@ -713,7 +714,7 @@ var account = {
 		for(var i in uids)	
 			(function(i){
 				funcs.push(function(cb) {
-					global.redisStore.get('cache.account.' + uids[i], function(err, data) {
+					redisStore.get('cache.account.' + uids[i], function(err, data) {
 						if(data)
 						{
 							results.push(JSON.parse(data));
@@ -739,7 +740,7 @@ var account = {
 							for(var i in res)
 							{
 								results.push(res[i]);
-								global.redisStore.set('cache.account.' + res[i].uid, JSON.stringify(res[i]));
+								redisStore.set('cache.account.' + res[i].uid, JSON.stringify(res[i]));
 							}
 							cb(isArray(uid)?results:results[0]);
 						}
@@ -765,7 +766,7 @@ var account = {
 			[uid]
 		);
 
-		global.redisStore.del('cache.account.' + uid);
+		redisStore.del('cache.account.' + uid);
 	},
 
 	register: function(cb) {
@@ -878,7 +879,7 @@ var account = {
 
 	session: {
 		get: function(sid, cb) {
-			global.redisStore.get('session:' + sid, function(err, data) {
+			redisStore.get('session:' + sid, function(err, data) {
 				if(data)
 				{
 					var parse = JSON.parse(data);
@@ -904,12 +905,12 @@ var account = {
 
 				var sid = md5.digest('hex');
 
-				global.redisStore.get('session:' + sid, function(err, data) {
+				redisStore.get('session:' + sid, function(err, data) {
 					if(data == null)
 					{
 						cb(sid);
 
-						global.redisStore.set('session:' + sid, JSON.stringify({
+						redisStore.set('session:' + sid, JSON.stringify({
 							uid: uid
 						}));
 					}
@@ -1041,6 +1042,7 @@ exports.ready = function() {
 	modules = global.modules;
 	config = global.config;
 	mysqlClient = global.mysqlClient;
+	redisStore = global.redisStore;
 
 	function apiCall(name, arg, cb) {
 		function call() {
