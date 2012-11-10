@@ -3,11 +3,6 @@ module.exports = {
 	
 	modules: [
 		{
-			name: 'example',
-			type: 'express',
-			host: 'example.bicy.com'
-		},
-		{
 			name: 'site',
 			type: 'express',
 			host: 'bicy.com'
@@ -21,7 +16,25 @@ module.exports = {
 			name: 'api',
 			type: 'express',
 			host: 'api.bicy.com'
+		},
+		{
+			name: 'account',
+			type: 'model'
+		},
+		{
+			name: 'race',
+			type: 'model'
 		}
+	],
+
+	autoRequire: [
+		'express',
+		'querystring',
+		'async',
+		'fb',
+		'crypto',
+		'request',
+		'fs',
 	],
 
 	redis: {
