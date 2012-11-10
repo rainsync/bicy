@@ -1,16 +1,15 @@
 var express = require('express');
 var fs = require('fs');
 var config = require('./config');
+var common = require('./common');
 
 var redis;
 var app = express();
 var vhost = express();
 var modules = {};
+var model = {};
 var redisStore;
 var mysqlClient;
-
-global.modules = modules;
-global.config = config;
 
 //redis initalize
 var redis;
@@ -43,7 +42,49 @@ if(config.mysql.enabled)
 	global.mysqlClient = mysqlClient;
 }
 
-//hosts initialize
+for(var i in common)
+	eval("var " + i + " = common." + i);
+
+global.common = common;
+global.model = model;
+global.config = config;
+global.moduleInit = function() {
+	var ev = '';
+
+	function add(lhs, rhs){ev+="var " + lhs + " = "; for(var i = 1; i < arguments.length; i++) ev+= arguments[i]; ev+="; ";}
+	function end(){ev+="\n";}
+
+	ev+="/* moduleInit */\n";
+	for(var i in model) add(i, 'global.model.', i); end();
+	for(var i in common) add(i, 'global.common.', i); end();
+	for(var i in config.autoRequire)
+	{
+		var varName, fileName;
+
+		if(isArray(config.autoRequire[i]))
+			varName = config.autoRequire[i][0], fileName = config.autoRequire[i][1];
+		else
+			varName = fileName = config.autoRequire[i];
+
+		add(varName, "require('", fileName, "')");
+	} end();
+	ev+="/* ---------- */\n";
+
+	return ev;
+};
+
+//initialize step1
+for(var i in config.modules)
+{
+	(function(info){
+		if(info.type == 'model')
+		{
+			model[info.name] = {};
+		}
+	})(config.modules[i]);
+}
+
+//initialize step2
 for(var i in config.modules)
 {
 	modules[config.modules[i].name] = {};
@@ -74,7 +115,7 @@ for(var i in config.modules)
 			} finally {
 				if(module)
 				{
-					module.ready();
+					if(hasOwnProperty(modules[i], 'ready')) module.ready();
 					console.log('....OK!');
 				}
 				else console.log('....ERROR');
@@ -101,6 +142,11 @@ for(var i in config.modules)
 			else
 				app.use(vhost(info.host));
 		}
+		else if(info.type == 'model')
+		{
+			for(var i in module.model)
+				model[info.name][i] = module.model[i];
+		}
 		else if(info.type == 'extension')
 		{
 
@@ -111,7 +157,8 @@ for(var i in config.modules)
 }
 
 for(var i in modules)
-	modules[i].ready();
+	if(hasOwnProperty(modules[i], 'ready'))
+		modules[i].ready();
 
 process.on('uncaughtException', function (err) {
 	console.log('uncaught exception -------------------------------');
@@ -124,12 +171,3 @@ if(isArray(config.ports) == true)
 		app.listen(config.ports[i]);
 else
 	app.listen(config.ports);
-
-
-function isArray(obj)
-{
-	if(Object.prototype.toString.apply(obj) == '[object Array]')
-		return true;
-	else
-		return false;	
-}
