@@ -73,6 +73,12 @@ global.moduleInit = function() {
     return ev;
 };
 
+function modelInit(modelName, newModel)
+{
+    for(var i in model[modelName]) delete model[modelName][i];
+    for(var i in newModel) model[modelName][i] = newModel[i];   
+}
+
 //initialize step1
 for(var i in config.modules)
 {
@@ -115,6 +121,10 @@ for(var i in config.modules)
             } finally {
                 if(module)
                 {
+                    if(info.type == 'model')
+                    {
+                        modelInit(info.name, module.model);
+                    }
                     if(hasOwnProperty(modules[i], 'ready')) module.ready();
                     console.log('....OK!');
                 }
@@ -144,8 +154,7 @@ for(var i in config.modules)
         }
         else if(info.type == 'model')
         {
-            for(var i in module.model)
-                model[info.name][i] = module.model[i];
+            modelInit(info.name, module.model);
         }
         else if(info.type == 'extension')
         {
