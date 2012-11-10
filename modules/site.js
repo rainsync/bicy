@@ -1,15 +1,9 @@
-var express = require('express');
-var crypto = require('crypto');
-var querystring = require('querystring');
-var request = require('request');
-var fb = require('fb');
+eval(global.moduleInit());
+
 var app = express();
 
 exports.app = app;
 exports.ready = function() {
-	var modules = global.modules;
-	var config = global.config;
-
 	app.configure(function() {
 		app.use(express.bodyParser());
 		app.use(express.methodOverride());

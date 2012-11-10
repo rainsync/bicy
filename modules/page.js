@@ -1,11 +1,9 @@
-var express = require('express');
+eval(global.moduleInit());
+
 var app = express();
 
 exports.app = app;
 exports.ready = function() {
-	var modules = global.modules;
-	var config = global.config;
-
 	var code = config.shortUrl.base62code;
 	var codeToken = [];
 
@@ -123,4 +121,4 @@ exports.ready = function() {
 
 	for(var i = 0; i < 62; i++)
 		codeToken[i] = code.substr(i, 1);
-}
+};
