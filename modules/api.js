@@ -282,7 +282,8 @@ var api = {
                     {
                         results.push({
                             uid: res[i].uid,
-                            nick: res[i].nick
+                            nick: res[i].nick,
+                            picture: res[i].pictureurl
                         });
                     }
 
