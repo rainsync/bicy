@@ -391,7 +391,49 @@ var api = {
     },
 
     'race-info': function(arg, cb) {
+        if(arg._usr.raceno == 0) {
+            cb({
+                state: 0,
+                participants: []
+            });
+        }
+        else {
+            async.waterfall([
+                function(cb) {
+                    race.participant(arg._usr.raceno, function(res) {
+                        cb(null, res);
+                    });
+                },
 
+                function(res, cb) {
+                    account.get(res, function(res) {
+                        var results = [];
+
+                        for(var i in res)
+                        {
+                            results.push({
+                                uid: res[i].uid,
+                                nick: res[i].nick,
+                                picture: res[i].pictureurl
+                            });
+                        }
+
+                        cb(null, results);
+                    });
+                },
+
+                function(cb) {
+
+                }
+            ],
+
+            function(err, results) {
+                cb({
+                    state: 0,
+                    participants: results
+                });
+            });
+        }
     },
 
     'race-summary': function(arg, cb) {
