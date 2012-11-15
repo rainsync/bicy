@@ -334,16 +334,45 @@ var api = {
     },
 
     'race-invite': function(arg, cb) {
-        race.invite(arg._uid, arg._usr.raceno, arg.targets, function(err) {
-            if(err)
-                cb({
-                    state: 1,
-                    msg: err
+        var raceNo;
+
+        async.waterfall([
+            function(cb) {
+                if(arg._usr.raceno == 0) { // 레이스에 참가중이 아니다?
+                    race.create(arg._uid, function(no) {
+                        if(no) {
+                            arg._usr.raceno = no;
+                            cb(null);
+                        }
+                        else
+                            cb({
+                                state: 1,
+                                msg: 'RACE CREATE RROR'
+                            });
+                    });
+                }
+                else {
+                    cb(null);
+                }
+            },
+
+            function(cb) {
+                race.invite(arg._uid, arg._usr.raceno, arg.targets, function(err) {
+                    if(err)
+                        cb({
+                            state: 1,
+                            msg: err
+                        });
+                    else
+                        cb({
+                            state: 0
+                        });
                 });
-            else
-                cb({
-                    state: 0
-                });
+            }
+        ],
+
+        function(res) {
+            cb(res);
         });
     },
 
