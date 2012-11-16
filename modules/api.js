@@ -156,6 +156,12 @@ var api = {
                         state: 0,
                         sessid: sid
                     });
+
+                    if(arg.devicetoken) {
+                        account.session.update(sid, {
+                            devicetoken: arg.devicetoken
+                        });
+                    }
                 });
             }
             else
