@@ -214,6 +214,23 @@ exports.model = {
             });
         },
 
+        update: function(sid, updates) {
+            redisStore.get('session:' + sid, function(err, data) {
+                if(data)
+                {
+                    var parse = JSON.parse(data);
+                    for(var i in updates) {
+                        parse[i] = updates[i];
+                    }
+                    redisStore.set('session:' + sid, JSON.stringify(parse));
+                }
+                else
+                {
+                    cb(null);
+                }
+            });
+        },
+
         make: function(uid, cb) {
             function makeSessionId()
             {
