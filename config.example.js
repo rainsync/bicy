@@ -24,6 +24,10 @@ module.exports = {
         {
             name: 'race',
             type: 'model'
+        },
+        {
+            name: 'apns',
+            type: 'model'
         }
     ],
 
@@ -35,6 +39,7 @@ module.exports = {
         'crypto',
         'request',
         'fs',
+        'apn',
     ],
 
     redis: {
@@ -59,5 +64,11 @@ module.exports = {
     facebook: {
         appId: '',
         appSecret: ''
+    },
+
+    apns: {
+        enabled: true,
+        cert: 'key.pem',
+        key: 'key.pem',
     }
 };
