@@ -67,8 +67,9 @@ module.exports = {
     },
 
     apns: {
-        enabled: true,
-        cert: 'key.pem',
-        key: 'key.pem',
+        sandbox: true,
+        cert: 'apns-dev-cert.pem',
+        key: 'apns-dev-key.pem',
+        passphrase: '1234'
     }
 };
