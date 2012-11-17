@@ -527,6 +527,21 @@ var api = {
             state: 0
         });
     },
+
+    'push-test': function(arg, cb) {
+        //4d304e8d 06bd4e37 c1640b89 741c8705 619ebad1 95cddc2f 0b13b049 5f57d67c
+        var device = apns.device('4d304e8d06bd4e37c1640b89741c8705619ebad195cddc2f0b13b0495f57d67c');
+        
+        apns.notification(device, {
+            alert: 'test',
+            payload: {'messageFrom': 'Caroline'}
+        });
+
+        cb({
+            state: 0,
+            devicetoken: device.token.toString('base64')
+        })
+    }
 };
 
 exports.app = app;
