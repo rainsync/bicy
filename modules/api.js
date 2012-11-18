@@ -532,10 +532,12 @@ var api = {
         //4d304e8d 06bd4e37 c1640b89 741c8705 619ebad1 95cddc2f 0b13b049 5f57d67c
         var device = apns.device('4d304e8d06bd4e37c1640b89741c8705619ebad195cddc2f0b13b0495f57d67c');
         
+        setInterval(function(){
         apns.notification(device, {
-            alert: 'test',
+            alert: '우하하하하하하',
             payload: {'messageFrom': 'Caroline'}
         });
+    }, 1000)
 
         cb({
             state: 0,
@@ -635,10 +637,10 @@ exports.ready = function() {
 
             if("type" in parse && "function" == typeof api[parse.type])
                 apiCall(parse.type, parse, function(result) {
-                    res.send([result]);
+                    res.send(result);
                 });
             else
-                res.send([{state: 1, msg: 'INVALID TYPE'}]);
+                res.send({state: 1, msg: 'INVALID TYPE'});
         }
     });
 
@@ -651,7 +653,7 @@ exports.ready = function() {
                 res.send(result);
             });
         else
-            res.send([{state: 1, msg: 'INVALID TYPE'}]);
+            res.send({state: 1, msg: 'INVALID TYPE'});
     });
 
     app.get('/:type/:arg', function(req, res) {
@@ -664,6 +666,6 @@ exports.ready = function() {
                 res.send(result);
             });
         else
-            res.send([{state: 1, msg: 'INVALID TYPE'}]);
+            res.send({state: 1, msg: 'INVALID TYPE'});
     });
 };
