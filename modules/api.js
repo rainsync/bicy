@@ -426,10 +426,6 @@ var api = {
 
                         cb(null, results);
                     });
-                },
-
-                function(cb) {
-
                 }
             ],
 
